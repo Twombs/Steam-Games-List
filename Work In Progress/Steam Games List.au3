@@ -9,7 +9,7 @@
 #ce ----------------------------------------------------------------------------
 
 ; FUNCTIONS
-; MainGUI(), CharacterReplacements($text), SetStateOfControls($state)
+; MainGUI(), CharacterReplacements($text), ParseTheDRMFreeList(), SetStateOfControls($state)
 
 #include <Constants.au3>
 #include <GUIConstantsEx.au3>
@@ -34,11 +34,12 @@ Global $Button_user, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_
 Global $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_title, $Input_user
 Global $List_games
 
-Global $array, $buttxt, $created, $display, $download, $entry, $freelist, $g, $game, $gameID, $games, $image, $inifle, $lines
-Global $link, $ListGUI, $logfle, $pass, $ping, $read, $result, $state, $SteamCMD, $text, $title, $URL, $user, $userID, $version
-Global $xmlfle
+Global $a, $array, $buttxt, $c, $chunk, $created, $display, $download, $e, $entries, $entry, $freefle, $freelist, $g, $game, $gameID
+Global $games, $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $notes, $pass, $ping, $read, $result, $state, $SteamCMD, $text
+Global $title, $URL, $user, $userID, $val, $version, $xmlfle
 
 $created = "September 2021"
+$freefle = @ScriptDir & "\DRMfree.ini"
 $freelist = @ScriptDir & "\DRMfree.html"
 $inifle = @ScriptDir & "\Settings.ini"
 $logfle = @ScriptDir & "\Log.txt"
@@ -55,6 +56,7 @@ EndIf
 $userID = IniRead($inifle, "Steam User", "id", "")
 $result = InputBox("Steam User ID", "Enter or Accept the current ID.", $userID, "", 200, 130, Default, Default, 0)
 If @error = 0 And $result <> "" Then
+	SplashTextOn("", "Please Wait!", 180, 80, -1, -1, 33)
     If $result <> $userID Then
 	   $userID = $result
 	   IniWrite($inifle, "Steam User", "id", $userID)
@@ -68,6 +70,7 @@ If @error = 0 And $result <> "" Then
 	Else
 		MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $GOGcliGUI)
 	EndIf
+	SplashOff()
 EndIf
 If FileExists($xmlfle) Then
     $lines = _FileCountLines($xmlfle)
@@ -110,14 +113,24 @@ If FileExists($xmlfle) Then
 		EndIf
     EndIf
 EndIf
+If Not FileExists($freefle) Then
+	If FileExists($freelist) Then
+		$lines = _FileCountLines($freelist)
+		If $lines > 0 Then
+			SplashTextOn("", "Please Wait!", 180, 80, -1, -1, 33)
+			ParseTheDRMFreeList()
+			SplashOff()
+		EndIf
+    EndIf
+EndIf
 MainGUI()
 
 Exit
 
 Func MainGUI()
-	Local $Group_backup, $Group_list, $Label_index, $Label_size
+	Local $Edit_notes, $Group_backup, $Group_list, $Label_free, $Label_index, $Label_notes, $Label_size
 	;
-	Local $a, $decrypt, $decrypted, $encrypted, $exStyle, $find, $gamesfld, $height, $icoD, $icoI, $icoM, $icoS
+	Local $decrypt, $decrypted, $encrypted, $exStyle, $find, $gamesfld, $height, $icoD, $icoI, $icoM, $icoS
 	Local $icoT, $icoX, $ind, $left, $listurl, $musicfld, $num, $ontop, $parent, $password, $size, $steamfold
 	Local $store, $style, $tabs, $top, $type, $username, $vdffile, $width, $winsize
 	;
@@ -134,9 +147,21 @@ Func MainGUI()
 	; CONTROLS
 	$Group_list = GUICtrlCreateGroup("Games", 10, 5, 390, 335)
 	GUICtrlSetResizing($Group_list, $GUI_DOCKALL)
-	$List_games = GUICtrlCreateList("", 15, 21, 380, 285, $GUI_SS_DEFAULT_LIST + $LBS_USETABSTOPS)
+	$List_games = GUICtrlCreateList("", 15, 21, 380, 235, $GUI_SS_DEFAULT_LIST + $LBS_USETABSTOPS)
 	GUICtrlSetResizing($List_games, $GUI_DOCKALL)
+	GUICtrlSetBkColor($List_games, 0xFFFFCE)
 	GUICtrlSetTip($List_games, "Select a game!")
+	$Label_free = GUICtrlCreateLabel("DRM-Free", 20, 255, 60, 20, $SS_CENTER + $SS_CENTERIMAGE + $SS_SUNKEN)
+	GUICtrlSetFont($Label_free, 7, 400, 0, "Small Fonts")
+	GUICtrlSetResizing($Label_free, $GUI_DOCKALL)
+	GUICtrlSetBkColor($Label_free, 0xFFFFCE)
+	$Label_notes = GUICtrlCreateLabel("NOTES", 20, 275, 60, 25, $SS_CENTER + $SS_CENTERIMAGE + $SS_SUNKEN)
+	GUICtrlSetFont($Label_notes, 8, 600)
+	GUICtrlSetResizing($Label_notes, $GUI_DOCKALL)
+	GUICtrlSetBkColor($Label_notes, $COLOR_LIME)
+	$Edit_notes = GUICtrlCreateEdit("", 80, 255, 310, 45, $ES_WANTRETURN + $WS_VSCROLL + $ES_AUTOVSCROLL)
+	GUICtrlSetResizing($Edit_notes, $GUI_DOCKALL)
+	GUICtrlSetTip($Edit_notes, "DRM-Free Notes!")
 	$Label_index = GUICtrlCreateLabel("Index", 20, 310, 37, 20, $SS_CENTER + $SS_CENTERIMAGE)
 	GUICtrlSetResizing($Label_index, $GUI_DOCKALL)
 	GUICtrlSetBkColor($Label_index, $COLOR_BLUE)
@@ -151,7 +176,7 @@ Func MainGUI()
 	$Input_size = GUICtrlCreateInput("", 134, 310, 70, 20, $ES_CENTER + $ES_READONLY)
 	GUICtrlSetResizing($Input_size, $GUI_DOCKALL)
 	GUICtrlSetTip($Input_size, "Size of selected game folder!")
-	$Input_find = GUICtrlCreateInput("", 212, 310, 153, 20)
+	$Input_find = GUICtrlCreateInput("", 212, 310, 153, 20, $ES_CENTER)
 	GUICtrlSetResizing($Input_find, $GUI_DOCKALL)
 	GUICtrlSetTip($Input_find, "Search text!")
 	$Button_find = GUICtrlCreateButton("F", 368, 308, 22, 23, $BS_ICON)
@@ -580,15 +605,34 @@ Func MainGUI()
 				$listurl = GUICtrlRead($Input_list)
 				If $listurl <> "" Then
 					If StringLeft($listurl, 4) = "http" Then
+						SetStateOfControls($GUI_DISABLE)
+						$find = GUICtrlRead($Input_find)
+						GUICtrlSetBkColor($Input_find, $COLOR_RED)
+						GUICtrlSetData($Input_find, "Please Wait!")
 						$ping = Ping("gog.com", 5000)
 						If $ping > 0 Then
 							$download = InetGet($listurl, $freelist, 0, 0)
 							InetClose($download)
 							_FileWriteLog($logfle, "Downloaded the DRM-Free list.")
+							If FileExists($freelist) Then
+								$lines = _FileCountLines($freelist)
+								If $lines > 0 Then
+									ParseTheDRMFreeList()
+								Else
+									_FileWriteLog($logfle, "Content Error - File is empty.")
+									MsgBox(262192, "Content Error", "File is empty!", 0, $ListGUI)
+								EndIf
+							Else
+								_FileWriteLog($logfle, "Download Error - File not found.")
+								MsgBox(262192, "Download Error", "File not found!", 0, $ListGUI)
+							EndIf
 						Else
-							MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $GOGcliGUI)
+							MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $ListGUI)
 						EndIf
-						MsgBox(262192, "Status Report", "This feature is incomplete!", 0, $ListGUI)
+						GUICtrlSetBkColor($Input_find, $CLR_DEFAULT)
+						GUICtrlSetData($Input_find, $find)
+						SetStateOfControls($GUI_ENABLE)
+						;MsgBox(262192, "Status Report", "This feature is incomplete!", 0, $ListGUI)
 					EndIf
 				EndIf
 			Case $msg = $Button_backup
@@ -678,67 +722,78 @@ Func MainGUI()
 							EndIf
 						EndIf
 					EndIf
-					GUICtrlSetState($Button_down, $GUI_ENABLE)
-					GUICtrlSetState($Button_install, $GUI_ENABLE)
-					GUICtrlSetState($Button_backup, $GUI_ENABLE)
-				EndIf
-				$ind = _GUICtrlListBox_GetCurSel($List_games)
-				$num = $ind + 1
-				GUICtrlSetData($Input_index, $num)
-				;$title = GUICtrlRead($Input_title)
-				$title = CharacterReplacements($title)
-				$gamefold = $gamesfld & "\" & $title
-				If $title <> "" And FileExists($gamefold) Then
-					GUICtrlSetState($List_games, $GUI_DISABLE)
-					GUICtrlSetData($Input_size, "wait")
-					$size = DirGetSize($gamefold)
-					GUICtrlSetState($List_games, $GUI_ENABLE)
-				Else
-					If StringRight($title, 11) = " Soundtrack" Then
-						$gamefold = $musicfld & "\" & $title
+					;GUICtrlSetState($Button_down, $GUI_ENABLE)
+					;GUICtrlSetState($Button_install, $GUI_ENABLE)
+					;GUICtrlSetState($Button_backup, $GUI_ENABLE)
+					$val = IniRead($freefle, $title, "drm-free", "")
+					If $val = 1 Then
+						GUICtrlSetBkColor($Label_free, $COLOR_RED)
+						GUICtrlSetColor($Label_free, $COLOR_YELLOW)
+						$notes = IniRead($freefle, $title, "notes", "")
+					Else
+						GUICtrlSetBkColor($Label_free, 0xFFFFCE)
+						GUICtrlSetColor($Label_free, $COLOR_BLACK)
+						$notes = ""
 					EndIf
-					If FileExists($gamefold) Then
+					GUICtrlSetData($Edit_notes, $notes)
+					$ind = _GUICtrlListBox_GetCurSel($List_games)
+					$num = $ind + 1
+					GUICtrlSetData($Input_index, $num)
+					;$title = GUICtrlRead($Input_title)
+					$title = CharacterReplacements($title)
+					$gamefold = $gamesfld & "\" & $title
+					If $title <> "" And FileExists($gamefold) Then
 						GUICtrlSetState($List_games, $GUI_DISABLE)
 						GUICtrlSetData($Input_size, "wait")
 						$size = DirGetSize($gamefold)
 						GUICtrlSetState($List_games, $GUI_ENABLE)
 					Else
-						$gamefold = ""
-						$size = ""
-					;ElseIf FileExists($gamesfld) Then
-					;	$size = DirGetSize($gamesfld)
+						If StringRight($title, 11) = " Soundtrack" Then
+							$gamefold = $musicfld & "\" & $title
+						EndIf
+						If FileExists($gamefold) Then
+							GUICtrlSetState($List_games, $GUI_DISABLE)
+							GUICtrlSetData($Input_size, "wait")
+							$size = DirGetSize($gamefold)
+							GUICtrlSetState($List_games, $GUI_ENABLE)
+						Else
+							$gamefold = ""
+							$size = ""
+						;ElseIf FileExists($gamesfld) Then
+						;	$size = DirGetSize($gamesfld)
+						EndIf
 					EndIf
-				EndIf
-				If $size > 0 Then
-					If $size < 1024 Then
-						$size = $size & " bytes"
-					ElseIf $size < 1048576 Then
-						$size = Ceiling($size / 1024)
-						$size = $size & " Kb"
-					ElseIf $size < 1073741824 Then
-						$size = Round($size / 1048576, 2)
-						$size = $size & " Mb"
-					ElseIf $size < 1099511627776 Then
-						$size = Round($size / 1073741824, 3)
-						$size = $size & " Gb"
+					If $size > 0 Then
+						If $size < 1024 Then
+							$size = $size & " bytes"
+						ElseIf $size < 1048576 Then
+							$size = Ceiling($size / 1024)
+							$size = $size & " Kb"
+						ElseIf $size < 1073741824 Then
+							$size = Round($size / 1048576, 2)
+							$size = $size & " Mb"
+						ElseIf $size < 1099511627776 Then
+							$size = Round($size / 1073741824, 3)
+							$size = $size & " Gb"
+						Else
+							$size = Round($size / 1099511627776, 4)
+							$size = $size & " Tb"
+						EndIf
 					Else
-						$size = Round($size / 1099511627776, 4)
-						$size = $size & " Tb"
+						$size = "missing"
 					EndIf
-				Else
-					$size = "missing"
+					GUICtrlSetData($Input_size, $size)
+					GUICtrlSetData($Input_title, $title)
+					GUICtrlSetData($Input_id, $gameID)
+					If $store = 1 And $link <> "" Then
+						$link = StringReplace($link, "https://steamcommunity.com", "https://store.steampowered.com")
+					EndIf
+					GUICtrlSetData($Input_link, $link)
+					GUICtrlSetData($Input_image, $image)
+					GUICtrlSetState($Input_title, $GUI_FOCUS)
+					Send("{HOME}")
+					GUICtrlSetState($List_games, $GUI_FOCUS)
 				EndIf
-				GUICtrlSetData($Input_size, $size)
-				GUICtrlSetData($Input_title, $title)
-				GUICtrlSetData($Input_id, $gameID)
-				If $store = 1 And $link <> "" Then
-					$link = StringReplace($link, "https://steamcommunity.com", "https://store.steampowered.com")
-				EndIf
-				GUICtrlSetData($Input_link, $link)
-				GUICtrlSetData($Input_image, $image)
-				GUICtrlSetState($Input_title, $GUI_FOCUS)
-				Send("{HOME}")
-				GUICtrlSetState($List_games, $GUI_FOCUS)
 			Case Else
 		EndSelect
 	WEnd
@@ -750,11 +805,87 @@ Func CharacterReplacements($text)
 	Return $text
 EndFunc ;=> CharacterReplacements
 
+Func ParseTheDRMFreeList()
+	$read = FileRead($freelist)
+	If $read <> "" Then
+		_FileCreate($freefle)
+		$games = ""
+		$entries = StringSplit($read, @LF & "<tr>" & @LF, 1)
+		For $e = 2 To $entries[0]
+			$chunk = $entries[$e]
+			$entry = StringSplit($chunk, '</td></tr>', 1)
+			$entry = $entry[1]
+			$entry = StringSplit($entry, '</a>' & @LF & '</td>', 1)
+			$game = $entry[1]
+			If StringInStr($game, ' title="') < 1 Then $game = $entry[2]
+			$game = StringSplit($game, ' title="', 1)
+			If $game[0] = 2 Then
+				$game = $game[2]
+				$game = StringSplit($game, '">', 1)
+				$game = $game[2]
+				$game = StringSplit($game, '</a>', 1)
+				$game = $game[1]
+				If $games = "" Then
+					$games = "[" & $game & "]" & @CRLF & "drm-free=1"
+				Else
+					$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
+				EndIf
+			Else
+				$entry = $game
+				For $a = 2 To $entry[0]
+					$game = $entry[$a]
+					$game = StringSplit($game, '">', 1)
+					$game = $game[2]
+					$game = StringSplit($game, '</a>', 1)
+					$game = $game[1]
+					If $games = "" Then
+						$games = "[" & $game & "]" & @CRLF & "drm-free=1"
+					Else
+						$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
+					EndIf
+				Next
+			EndIf
+			$notes = ""
+			$chunk = StringReplace($chunk, '<td style="text-align: center;">?' & @LF, '')
+			$chunk = StringReplace($chunk, '<td style="text-align: center;">✔' & @LF, '')
+			$chunk = StringReplace($chunk, '</td></tr>' & @LF, '')
+			$chunk = StringReplace($chunk, '</td></tr>', '')
+			$chunk = StringReplace($chunk, '</td>' & @LF, '')
+			$chunk = StringReplace($chunk, '<td>', '')
+			$chunk = StringReplace($chunk, '</p>', '')
+			$chunk = StringReplace($chunk, "<code>", "'")
+			$chunk = StringReplace($chunk, "</code>", "'")
+			$chunk = StringReplace($chunk, '</tbody></table>', '')
+			$chunk = StringReplace($chunk, '<table class="wikitable" style="width: 100%">', '')
+			$chunk = StringReplace($chunk, '<tbody><tr>', '')
+			$chunk = StringReplace($chunk, "<b>", "(")
+			$chunk = StringReplace($chunk, "</b>", ")")
+			$chunk = StringReplace($chunk, "[", "")
+			$chunk = StringReplace($chunk, "]", "")
+			$chunk = StringSplit($chunk, @LF, 1)
+			For $c = 1 To $chunk[0]
+				$line = $chunk[$c]
+				If StringInStr($line, 'href="') < 1 And StringInStr($line, '<td style=') < 1 Then
+					$notes = StringStripWS($line, 7)
+					If $notes <> "" Then ExitLoop
+				EndIf
+			Next
+			If $notes <> "" Then $games = $games & @CRLF & "notes=" & $notes
+		Next
+		$games = StringReplace($games, "&#39;", "'")
+		$games = StringReplace($games, "&amp;", "&")
+		FileWrite($freefle, $games)
+		$entries = $entries[0]
+		MsgBox(262144, "DRM-Free Games", $entries & " found.", 3, $ListGUI)
+	EndIf
+	_FileWriteLog($logfle, "Parsed the DRM-Free list.")
+EndFunc ;=> ParseTheDRMFreeList
+
 Func SetStateOfControls($state)
 	GUICtrlSetState($ListGUI, $state)
 	GUICtrlSetState($Input_index, $state)
 	GUICtrlSetState($Input_size, $state)
-	GUICtrlSetState($Input_find, $state)
+	;GUICtrlSetState($Input_find, $state)
 	GUICtrlSetState($Button_find, $state)
 	;
 	GUICtrlSetState($Checkbox_ontop, $state)
