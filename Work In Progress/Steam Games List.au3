@@ -30,13 +30,13 @@ _Singleton("steam-games-list-timboli")
 
 Global $Button_backup, $Button_down, $Button_exit, $Button_find, $Button_fold, $Button_id, $Button_image, $Button_info
 Global $Button_install, $Button_link, $Button_list, $Button_log, $Button_opts, $Button_pass, $Button_path, $Button_title
-Global $Button_user, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_user, $Combo_backup, $Input_find, $Input_id
-Global $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_title, $Input_user
-Global $List_games
+Global $Button_user, $Checkbox_find, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_user, $Combo_backup
+Global $Input_find, $Input_id, $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size
+Global $Input_title, $Input_user, $List_games
 
-Global $a, $array, $buttxt, $c, $chunk, $created, $display, $download, $e, $entries, $entry, $freefle, $freelist, $g, $game, $gameID
-Global $games, $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $notes, $pass, $ping, $read, $result, $state, $SteamCMD, $text
-Global $title, $URL, $user, $userID, $val, $version, $xmlfle
+Global $a, $array, $buttxt, $c, $chunk, $created, $display, $download, $e, $entries, $entry, $freefle, $freelist, $g, $game
+Global $gameID, $games, $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $notes, $pass, $ping, $read, $result, $state
+Global $SteamCMD, $text, $title, $URL, $user, $userID, $val, $version, $xmlfle
 
 $created = "September 2021"
 $freefle = @ScriptDir & "\DRMfree.ini"
@@ -131,8 +131,8 @@ Func MainGUI()
 	Local $Edit_notes, $Group_backup, $Group_list, $Label_free, $Label_index, $Label_notes, $Label_size
 	;
 	Local $decrypt, $decrypted, $encrypted, $exStyle, $find, $gamesfld, $height, $icoD, $icoI, $icoM, $icoS
-	Local $icoT, $icoX, $ind, $left, $listurl, $musicfld, $num, $ontop, $parent, $password, $size, $steamfold
-	Local $store, $style, $tabs, $top, $type, $username, $vdffile, $width, $winsize
+	Local $icoT, $icoX, $idx, $ind, $left, $listurl, $musicfld, $num, $ontop, $parent, $password, $size
+	Local $steamfold, $store, $style, $tabs, $top, $type, $username, $vdffile, $width, $winsize
 	;
 	$exStyle = $WS_EX_TOPMOST
 	$height = 510
@@ -176,9 +176,12 @@ Func MainGUI()
 	$Input_size = GUICtrlCreateInput("", 134, 310, 70, 20, $ES_CENTER + $ES_READONLY)
 	GUICtrlSetResizing($Input_size, $GUI_DOCKALL)
 	GUICtrlSetTip($Input_size, "Size of selected game folder!")
-	$Input_find = GUICtrlCreateInput("", 212, 310, 153, 20, $ES_CENTER)
+	$Input_find = GUICtrlCreateInput("", 212, 310, 130, 20, $ES_CENTER)
 	GUICtrlSetResizing($Input_find, $GUI_DOCKALL)
 	GUICtrlSetTip($Input_find, "Search text!")
+	$Checkbox_find = GUICtrlCreateCheckbox("", 346, 310, 20, 20)
+	GUICtrlSetResizing($Checkbox_find, $GUI_DOCKALL)
+	GUICtrlSetTip($Checkbox_find, "Search for DRM-Free from selected!")
 	$Button_find = GUICtrlCreateButton("F", 368, 308, 22, 23, $BS_ICON)
 	GUICtrlSetResizing($Button_find, $GUI_DOCKALL)
 	GUICtrlSetTip($Button_find, "Find the specified text in a title!")
@@ -298,11 +301,14 @@ Func MainGUI()
 		$type = "ZIP"
 		IniWrite($inifle, "Backup File", "type", $type)
 	EndIf
-	GUICtrlSetData($Combo_backup, "ZIP|EXE", $type)
+	GUICtrlSetData($Combo_backup, "ZIP|EXE|DIR", $type)
 	If $type = "ZIP" Then
 		GUICtrlSetTip($Combo_backup, "Zip the game folder!")
 	ElseIf $type = "EXE" Then
 		GUICtrlSetTip($Combo_backup, "Zip the game folder and make Executable!")
+	ElseIf $type = "DIR" Then
+		GUICtrlSetTip($Combo_backup, "Copy or Move the game folder to backup location!")
+		GUICtrlSetData($Button_backup, "FOLDER" & @LF & "BACKUP")
 	EndIf
 	;GUICtrlSetState($Combo_backup, $GUI_DISABLE)
 	;
@@ -468,7 +474,7 @@ Func MainGUI()
 					$winsize = WinGetClientSize($ListGUI, "")
 					$width = $winsize[0]
 					$height = $winsize[1]
-					WinMove($ListGUI, "", Default, Default, 476, 598)
+					WinMove($ListGUI, "", Default, Default, 476, 648)
 					$Button_user = GUICtrlCreateButton("USERNAME", 10, 510, 75, 20)
 					GUICtrlSetFont($Button_user, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_user, "Save the Username!")
@@ -501,6 +507,26 @@ Func MainGUI()
 					GUICtrlSetFont($Button_path, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_path, "Browse to set the Steam games folder path!")
 					GUICtrlSetData($Input_path, $gamesfld)
+					;
+					$Input_dest = GUICtrlCreateInput("", 10, 565, 315, 20)
+					GUICtrlSetTip($Input_dest, "Destination path of the backup!")
+					$Button_dest = GUICtrlCreateButton("DESTINATION", 325, 565, 85, 20)
+					GUICtrlSetFont($Button_dest, 6, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_dest, "Browse to set the destination path!")
+					;GUICtrlSetData($Input_dest, $destfld)
+					$Checkbox_dest = GUICtrlCreateCheckbox("Query", 415, 565, 45, 20)
+					GUICtrlSetTip($Checkbox_dest, "Query for Destination each time!")
+					;GUICtrlSetState($Checkbox_dest, $dest)
+					;
+					$Input_tera = GUICtrlCreateInput("", 10, 590, 338, 20)
+					GUICtrlSetTip($Input_tera, "Path of the TeraCopy program!")
+					$Button_tera = GUICtrlCreateButton("TeraCopy", 348, 590, 70, 20)
+					GUICtrlSetFont($Button_tera, 7, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_tera, "Browse to set the TeraCopy path!")
+					;GUICtrlSetData($Input_tera, $teracopy)
+					$Checkbox_tera = GUICtrlCreateCheckbox("Use", 423, 590, 40, 20)
+					GUICtrlSetTip($Checkbox_tera, "Use the TeraCopy program!")
+					;GUICtrlSetState($Checkbox_tera, $tera)
 				ElseIf $buttxt = "More" Then
 					$buttxt = "Less"
 					GUICtrlSetData($Button_opts, $buttxt)
@@ -512,6 +538,12 @@ Func MainGUI()
 					GUICtrlDelete($Checkbox_pass)
 					GUICtrlDelete($Input_path)
 					GUICtrlDelete($Button_path)
+					GUICtrlDelete($Input_dest)
+					GUICtrlDelete($Button_dest)
+					GUICtrlDelete($Checkbox_dest)
+					GUICtrlDelete($Input_tera)
+					GUICtrlDelete($Button_tera)
+					GUICtrlDelete($Checkbox_tera)
 					WinMove($ListGUI, "", Default, Default, $width + 6, $height + 28)
 				EndIf
 			Case $msg = $Button_log
@@ -567,6 +599,9 @@ Func MainGUI()
 					"cannot find that information on the store game page. However you" & @LF & _
 					"can find online listings about which ones are DRM-Free, and one of" & @LF & _
 					"them can be used by this program, to make determinations easier." & @LF & @LF & _
+					"CTRL held down while clicking folder button opens program folder." & @LF & @LF & _
+					"CTRL held down while clicking the password or username buttons" & @LF & _
+					"will reveal (toggle) the hidden text state." & @LF & @LF & _
 					"© Created by Timboli (aka TheSaint) in " & $created & $version, 0, $ListGUI)
 				SetStateOfControls($GUI_ENABLE)
 			Case $msg = $Button_image
@@ -584,7 +619,9 @@ Func MainGUI()
 					GUICtrlSetState($Checkbox_ontop, $ontop)
 					WinSetOnTop($ListGUI, "", 0)
 				EndIf
-				If FileExists($gamefold) Then
+				If _IsPressed("11") Then
+					ShellExecute(@ScriptDir)
+				ElseIf FileExists($gamefold) Then
 					ShellExecute($gamefold)
 				ElseIf FileExists($gamesfld) Then
 					ShellExecute($gamesfld)
@@ -594,10 +631,39 @@ Func MainGUI()
 				$find = GUICtrlRead($Input_find)
 				If $find <> "" Then
 					$ind = _GUICtrlListBox_GetCurSel($List_games)
-					$ind = _GUICtrlListBox_FindInText($List_games, $find, $ind, True)
-					If $ind > -1 Then
-						_GUICtrlListBox_SetCurSel($List_games, $ind)
-						_GUICtrlListBox_ClickItem($List_games, $ind, "left", False, 1, 0)
+					If $find = "DRM-Free" Then
+						GUICtrlSetData($Input_find, "Searching...")
+						$cnt = _GUICtrlListBox_GetCount($List_games)
+						For $c = $ind To $cnt - 1
+							$idx = $c + 1
+							$entry = _GUICtrlListBox_GetText($List_games, $idx)
+							If $entry <> "" Then
+								$entry = StringReplace($entry, $tabs, "|", 1)
+								$entry = StringReplace($entry, @TAB, "|")
+								$entry = StringSplit($entry, "|", 1)
+								$title = $entry[1]
+								$val = IniRead($freefle, $title, "drm-free", "")
+								If $val = 1 Then
+									$ind = $idx
+									_GUICtrlListBox_SetCurSel($List_games, $ind)
+									_GUICtrlListBox_ClickItem($List_games, $ind, "left", False, 1, 0)
+									ExitLoop
+								EndIf
+								If $c = $cnt - 2 Then
+									_GUICtrlListBox_SetTopIndex($List_games, 0)
+									$ind = -1
+									_GUICtrlListBox_SetCurSel($List_games, $ind)
+									$c = $ind
+								EndIf
+							EndIf
+						Next
+						GUICtrlSetData($Input_find, "DRM-Free")
+					Else
+						$ind = _GUICtrlListBox_FindInText($List_games, $find, $ind, True)
+						If $ind > -1 Then
+							_GUICtrlListBox_SetCurSel($List_games, $ind)
+							_GUICtrlListBox_ClickItem($List_games, $ind, "left", False, 1, 0)
+						EndIf
 					EndIf
 				EndIf
 			Case $msg = $Button_down
@@ -693,14 +759,29 @@ Func MainGUI()
 				EndIf
 				GUICtrlSetData($Input_link, $link)
 				IniWrite($inifle, "Link Type", "store", $store)
+			Case $msg = $Checkbox_find
+				; Search for DRM-Free from selected
+				$find = GUICtrlRead($Input_find)
+				If GUICtrlRead($Checkbox_find) = $GUI_CHECKED Then
+					$find = "DRM-Free"
+				Else
+					$find = StringReplace($find, "DRM-Free", "")
+				EndIf
+				GUICtrlSetData($Input_find, $find)
 			Case $msg = $Combo_backup
 				; Backup file type
 				$type = GUICtrlRead($Combo_backup)
 				IniWrite($inifle, "Backup File", "type", $type)
-				If $type = "ZIP" Then
-					GUICtrlSetTip($Combo_backup, "Zip the game folder!")
-				ElseIf $type = "EXE" Then
-					GUICtrlSetTip($Combo_backup, "Zip the game folder and make Executable!")
+				If $type = "DIR" Then
+					GUICtrlSetTip($Combo_backup, "Copy or Move the game folder to backup location!")
+					GUICtrlSetData($Button_backup, "FOLDER" & @LF & "BACKUP")
+				Else
+					If $type = "ZIP" Then
+						GUICtrlSetTip($Combo_backup, "Zip the game folder!")
+					ElseIf $type = "EXE" Then
+						GUICtrlSetTip($Combo_backup, "Zip the game folder and make Executable!")
+					EndIf
+					GUICtrlSetData($Button_backup, "BACKUP" & @LF & "TO FILE")
 				EndIf
 			Case $msg = $List_games
 				$title = ""
@@ -885,7 +966,7 @@ Func SetStateOfControls($state)
 	GUICtrlSetState($ListGUI, $state)
 	GUICtrlSetState($Input_index, $state)
 	GUICtrlSetState($Input_size, $state)
-	;GUICtrlSetState($Input_find, $state)
+	GUICtrlSetState($Checkbox_find, $state)
 	GUICtrlSetState($Button_find, $state)
 	;
 	GUICtrlSetState($Checkbox_ontop, $state)
