@@ -1,7 +1,7 @@
 # Steam-Games-List
 Downloads and or Displays a list of games owned at Steam.
 
-![Steam Games List](https://github.com/Twombs/Steam-Games-List/blob/main/Steam%20Games%20List_2.png?raw=true)
+![Steam Games List](https://github.com/Twombs/Steam-Games-List/blob/main/v0.0_b03/Steam%20Games%20List_2.png?raw=true)
 
 An inputbox is displayed when the executable is run, asking for the Steam User ID.
 
