@@ -21,6 +21,6 @@ The second to top button at right, is the Settings (Program Options) button. Whe
 
 A DRM-Free list can be downloaded from the PC Gaming Wiki, and then parsed for use when selecting a game entry or via a search.
 
-An existing (installed) game folder can be copied or moved to a different location as a backup. This can laternatively be done using the TeraCopy program, or you can use 7-Zip to create a zipped file at the backup destination, or ionstead create a self-extracting execute file there with a basic menu.
+An existing (installed) game folder can be copied or moved to a different location as a backup. This can aternatively be done using the TeraCopy program, or you can use 7-Zip to create a zipped file at the backup destination, or instead create a self-extracting execute file there with a basic install menu.
 
 NOT YET IMPLEMENTED - Interaction with SteamCMD to download and install your Steam games.
