@@ -19,7 +19,7 @@ The second to top button at right, is the Settings (Program Options) button. Whe
 
 ![Steam Games List](https://github.com/Twombs/Steam-Games-List/blob/main/Main_GUI_more.png?raw=true)
 
-A DRM-Free list can be downloaded from the PC Gaming Wiki, and then parsed for use when selecting a game entry or via a search.
+A DRM-Free list can be downloaded from the PC Gaming Wiki, and then parsed for use when selecting a game entry or via a search. Steam Fandom page added as another option.
 
 An existing (installed) game folder can be copied or moved to a different location as a backup. This can aternatively be done using the TeraCopy program, or you can use 7-Zip to create a zipped file at the backup destination, or instead create a self-extracting execute file there with a basic install menu.
 
