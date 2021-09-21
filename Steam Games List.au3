@@ -31,17 +31,18 @@ _Singleton("steam-games-list-timboli")
 Global $Button_backup, $Button_dest, $Button_destiny, $Button_down, $Button_exit, $Button_find, $Button_fold, $Button_id
 Global $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_opts, $Button_pass
 Global $Button_path, $Button_tera, $Button_title, $Button_user, $Button_zip, $Checkbox_dest, $Checkbox_find, $Checkbox_link
-Global $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera, $Checkbox_user, $Combo_backup, $Input_dest, $Input_find
-Global $Input_id, $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_tera
-Global $Input_title, $Input_user, $Input_zip, $List_games
+Global $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera, $Checkbox_user, $Combo_backup, $Combo_list, $Input_dest
+Global $Input_find, $Input_id, $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size
+Global $Input_tera, $Input_title, $Input_user, $Input_zip, $List_games
 
-Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $created, $dest, $display, $download, $e, $entries, $entry, $freefle
-Global $freelist, $g, $game, $gameID, $games, $gamesfld, $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld
-Global $notes, $pass, $path, $ping, $read, $result, $state, $SteamCMD, $steamfold, $tera, $text, $title, $URL, $user, $userID
-Global $val, $vdffile, $version, $xmlfle
+Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $created, $delete, $dest, $display, $download, $drmfree, $e, $end
+Global $entries, $entry, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld, $image, $inifle
+Global $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result, $state, $SteamCMD
+Global $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $xmlfle
 
 $created = "September 2021"
-$freefle = @ScriptDir & "\DRMfree.ini"
+$freefle1 = @ScriptDir & "\DRMfree.ini"
+$freefle2 = @ScriptDir & "\DRMfree2.ini"
 $freelist = @ScriptDir & "\DRMfree.html"
 $inifle = @ScriptDir & "\Settings.ini"
 $logfle = @ScriptDir & "\Log.txt"
@@ -111,20 +112,20 @@ If FileExists($xmlfle) Then
 			If $display = 1 Then
 				_ArrayDisplay($array, "Steam Games Owned", "", 0, "|", "Title --- ID --- Link --- Icon")
 			EndIf
-			_FileWriteLog($logfle, "Extracted game details from XML file.")
+			If $ping > 0 Then _FileWriteLog($logfle, "Extracted game details from XML file.")
 		EndIf
     EndIf
 EndIf
-If Not FileExists($freefle) Then
-	If FileExists($freelist) Then
-		$lines = _FileCountLines($freelist)
-		If $lines > 0 Then
-			SplashTextOn("", "Please Wait!", 180, 80, -1, -1, 33)
-			ParseTheDRMFreeList()
-			SplashOff()
-		EndIf
-    EndIf
-EndIf
+;~ If Not FileExists($freefle) Then
+;~ 	If FileExists($freelist) Then
+;~ 		$lines = _FileCountLines($freelist)
+;~ 		If $lines > 0 Then
+;~ 			SplashTextOn("", "Please Wait!", 180, 80, -1, -1, 33)
+;~ 			ParseTheDRMFreeList()
+;~ 			SplashOff()
+;~ 		EndIf
+;~     EndIf
+;~ EndIf
 MainGUI()
 
 Exit
@@ -220,6 +221,7 @@ Func MainGUI()
 	GUICtrlSetTip($Button_title, "Click to copy title to clipboard!")
 	$Input_title = GUICtrlCreateInput("", 55, 350, 405, 20)
 	GUICtrlSetResizing($Input_title, $GUI_DOCKALL)
+	GUICtrlSetTip($Input_title, "Selected game title!")
 	;
 	$Button_id = GUICtrlCreateButton("ID", 10, 375, 30, 20)
 	GUICtrlSetFont($Button_id, 7, 600, 0, "Small Fonts")
@@ -227,6 +229,7 @@ Func MainGUI()
 	GUICtrlSetTip($Button_id, "Click to copy ID to clipboard!")
 	$Input_id = GUICtrlCreateInput("", 40, 375, 70, 20)
 	GUICtrlSetResizing($Input_id, $GUI_DOCKALL)
+	GUICtrlSetTip($Input_id, "Steam game ID!")
 	;
 	$Button_link = GUICtrlCreateButton("URL", 120, 375, 40, 20)
 	GUICtrlSetFont($Button_link, 7, 600, 0, "Small Fonts")
@@ -234,6 +237,7 @@ Func MainGUI()
 	GUICtrlSetTip($Button_link, "Click to go to the game web page!")
 	$Input_link = GUICtrlCreateInput("", 160, 375, 250, 20)
 	GUICtrlSetResizing($Input_link, $GUI_DOCKALL)
+	GUICtrlSetTip($Input_link, "URL for online game web page!")
 	$Checkbox_link = GUICtrlCreateCheckbox("Store", 415, 375, 45, 20)
 	GUICtrlSetResizing($Checkbox_link, $GUI_DOCKALL)
 	GUICtrlSetTip($Checkbox_link, "Change the link type!")
@@ -244,13 +248,19 @@ Func MainGUI()
 	GUICtrlSetTip($Button_image, "Click to show the online image in your browser!")
 	$Input_image = GUICtrlCreateInput("", 55, 400, 405, 20)
 	GUICtrlSetResizing($Input_image, $GUI_DOCKALL)
+	GUICtrlSetTip($Input_image, "URL for online game icon!")
 	;
-	$Button_list = GUICtrlCreateButton("LIST", 10, 425, 40, 20)
+	$Button_list = GUICtrlCreateButton("LIST", 10, 425, 40, 21)
 	GUICtrlSetFont($Button_list, 7, 600, 0, "Small Fonts")
 	GUICtrlSetResizing($Button_list, $GUI_DOCKALL)
 	GUICtrlSetTip($Button_list, "Click to go to the online DRM-Free list in your browser!")
-	$Input_list = GUICtrlCreateInput("", 50, 425, 410, 20)
+	$Input_list = GUICtrlCreateInput("", 50, 425, 300, 21)
 	GUICtrlSetResizing($Input_list, $GUI_DOCKALL)
+	GUICtrlSetTip($Input_list, "URL for online DRM-Free page!")
+	$Combo_list = GUICtrlCreateCombo("", 355, 425, 105, 21)
+	GUICtrlSetResizing($Combo_list, $GUI_DOCKALL)
+	GUICtrlSetBkColor($Combo_list, 0xBFFFBF)
+	GUICtrlSetTip($Combo_list, "Select the Online DRM-Free page!")
 	;
 	$Button_down = GUICtrlCreateButton("DOWNLOAD && PARSE" & @LF & "THE DRM-FREE LIST", 10, 455, 140, 45, $BS_MULTILINE)
 	GUICtrlSetFont($Button_down, 7, 600, 0, "Small Fonts")
@@ -322,10 +332,19 @@ Func MainGUI()
 	EndIf
 	GUICtrlSetState($Checkbox_link, $store)
 	;
-	$listurl = IniRead($inifle, "DRM-Free List", "url", "")
+	;$listurl = IniRead($inifle, "DRM-Free List", "url", "")
+	$drmfree = "PC Gaming Wiki"
+	GUICtrlSetData($Combo_list, "PC Gaming Wiki|Steam Fandom", $drmfree)
+	$freefle = $freefle1
+	$listurl = IniRead($inifle, "Steam Fandom", "url", "")
+	If $listurl = "" Then
+		$listurl = "https://steam.fandom.com/wiki/List_of_DRM-free_games"
+		IniWrite($inifle, "Steam Fandom", "url", $listurl)
+	EndIf
+	$listurl = IniRead($inifle, "PC Gaming Wiki", "url", "")
 	If $listurl = "" Then
 		$listurl = "https://www.pcgamingwiki.com/wiki/The_Big_List_of_DRM-Free_Games_on_Steam"
-		IniWrite($inifle, "DRM-Free List", "url", $listurl)
+		IniWrite($inifle, "PC Gaming Wiki", "url", $listurl)
 	EndIf
 	GUICtrlSetData($Input_list, $listurl)
 	;
@@ -427,12 +446,12 @@ Func MainGUI()
         Select
 			Case $msg = $GUI_EVENT_CLOSE Or $msg = $Button_exit
 				; Exit or Close the program
-				$listurl = GUICtrlRead($Input_list)
-				If StringLeft($listurl, 4) = "http" Then
-					If $listurl <> IniRead($inifle, "DRM-Free List", "url", "") Then
-						IniWrite($inifle, "DRM-Free List", "url", $listurl)
-					EndIf
-				EndIf
+				;$listurl = GUICtrlRead($Input_list)
+				;If StringLeft($listurl, 4) = "http" Then
+				;	If $listurl <> IniRead($inifle, "DRM-Free List", "url", "") Then
+				;		IniWrite($inifle, "DRM-Free List", "url", $listurl)
+				;	EndIf
+				;EndIf
 				GUIDelete($ListGUI)
 				ExitLoop
 			Case $msg = $Button_zip And $buttxt = "More"
@@ -698,8 +717,10 @@ Func MainGUI()
 					"BIG THANKS as always to Jon & AutoIt developer etc team." & @LF & _
 					"BIG THANKS to the developers of 7-Zip." & @LF & _
 					"BIG THANKS to Steam Developers for SteamCMD." & @LF & _
-					"BIG THANKS to those who created & update the online 'PC Gaming" & @LF & _
-					"Wiki' page for 'DRM-Free' Steam games." & @LF & @LF & _
+					"BIG THANKS to those who provided & created (update) the online" & @LF & _
+					"'Steam Fandom' page for 'DRM-Free' Steam games." & @LF & _
+					"BIG THANKS to those who provided & created (update) the online" & @LF & _
+					"'PC Gaming Wiki' page for 'DRM-Free' Steam games." & @LF & @LF & _
 					"© Created by Timboli (aka TheSaint) in " & $created & $version, 0, $ListGUI)
 				SetStateOfControls($GUI_ENABLE)
 			Case $msg = $Button_image
@@ -749,15 +770,30 @@ Func MainGUI()
 									$ind = $idx
 									_GUICtrlListBox_SetCurSel($List_games, $ind)
 									_GUICtrlListBox_ClickItem($List_games, $ind, "left", False, 1, 0)
+									$found = 1
 									ExitLoop
 								EndIf
 								If $c = $cnt - 2 Then
 									_GUICtrlListBox_SetTopIndex($List_games, 0)
 									$ind = -1
 									_GUICtrlListBox_SetCurSel($List_games, $ind)
-									$c = $ind
+									;$c = $ind - 1
+									;MsgBox(262192, "Index", $c, 0, $ListGUI)
+									GUICtrlSetBkColor($Label_free, 0xFFFFCE)
+									GUICtrlSetColor($Label_free, $COLOR_BLACK)
+									$notes = ""
+									GUICtrlSetData($Edit_notes, $notes)
+									GUICtrlSetData($Input_index, "")
+									GUICtrlSetData($Input_size, "")
+									GUICtrlSetData($Input_title, "")
+									GUICtrlSetData($Input_id, "")
+									GUICtrlSetData($Input_link, "")
+									GUICtrlSetData($Input_image, "")
 								EndIf
 							EndIf
+							;GUICtrlSetData($Input_find, $idx)
+							;Sleep(100)
+							;If GUICtrlRead($Checkbox_find) = $GUI_UNCHECKED Then ExitLoop
 						Next
 						GUICtrlSetData($Input_find, "DRM-Free")
 					Else
@@ -777,11 +813,22 @@ Func MainGUI()
 						$find = GUICtrlRead($Input_find)
 						GUICtrlSetBkColor($Input_find, $COLOR_RED)
 						GUICtrlSetData($Input_find, "Please Wait!")
+						_GUICtrlListBox_SetCurSel($List_games, -1)
+						GUICtrlSetBkColor($Label_free, 0xFFFFCE)
+						GUICtrlSetColor($Label_free, $COLOR_BLACK)
+						$notes = ""
+						GUICtrlSetData($Edit_notes, $notes)
+						GUICtrlSetData($Input_index, "")
+						GUICtrlSetData($Input_size, "")
+						GUICtrlSetData($Input_title, "")
+						GUICtrlSetData($Input_id, "")
+						GUICtrlSetData($Input_link, "")
+						GUICtrlSetData($Input_image, "")
 						$ping = Ping("gog.com", 5000)
 						If $ping > 0 Then
 							$download = InetGet($listurl, $freelist, 0, 0)
 							InetClose($download)
-							_FileWriteLog($logfle, "Downloaded the DRM-Free list.")
+							_FileWriteLog($logfle, "Downloaded the " & $drmfree & " DRM-Free list.")
 							If FileExists($freelist) Then
 								$lines = _FileCountLines($freelist)
 								If $lines > 0 Then
@@ -1097,6 +1144,28 @@ Func MainGUI()
 					GUICtrlSetState($Button_destiny, $GUI_ENABLE)
 				EndIf
 				IniWrite($inifle, "Destination", "query", $dest)
+			Case $msg = $Combo_list
+				; Select the Online DRM-Free page
+				$drmfree = GUICtrlRead($Combo_list)
+				If $drmfree = "PC Gaming Wiki" Then
+					$listurl = IniRead($inifle, "PC Gaming Wiki", "url", "")
+					$freefle = $freefle1
+				ElseIf $drmfree = "Steam Fandom" Then
+					$listurl = IniRead($inifle, "Steam Fandom", "url", "")
+					$freefle = $freefle2
+				EndIf
+				GUICtrlSetData($Input_list, $listurl)
+				_GUICtrlListBox_SetCurSel($List_games, -1)
+				GUICtrlSetBkColor($Label_free, 0xFFFFCE)
+				GUICtrlSetColor($Label_free, $COLOR_BLACK)
+				$notes = ""
+				GUICtrlSetData($Edit_notes, $notes)
+				GUICtrlSetData($Input_index, "")
+				GUICtrlSetData($Input_size, "")
+				GUICtrlSetData($Input_title, "")
+				GUICtrlSetData($Input_id, "")
+				GUICtrlSetData($Input_link, "")
+				GUICtrlSetData($Input_image, "")
 			Case $msg = $Combo_backup
 				; Backup file type
 				$type = GUICtrlRead($Combo_backup)
@@ -1238,32 +1307,20 @@ EndFunc ;=> GetLocalSteamGamesFolder
 Func ParseTheDRMFreeList()
 	$read = FileRead($freelist)
 	If $read <> "" Then
-		_FileCreate($freefle)
 		$games = ""
-		$entries = StringSplit($read, @LF & "<tr>" & @LF, 1)
-		For $e = 2 To $entries[0]
-			$chunk = $entries[$e]
-			$entry = StringSplit($chunk, '</td></tr>', 1)
-			$entry = $entry[1]
-			$entry = StringSplit($entry, '</a>' & @LF & '</td>', 1)
-			$game = $entry[1]
-			If StringInStr($game, ' title="') < 1 Then $game = $entry[2]
-			$game = StringSplit($game, ' title="', 1)
-			If $game[0] = 2 Then
-				$game = $game[2]
-				$game = StringSplit($game, '">', 1)
-				$game = $game[2]
-				$game = StringSplit($game, '</a>', 1)
-				$game = $game[1]
-				If $games = "" Then
-					$games = "[" & $game & "]" & @CRLF & "drm-free=1"
-				Else
-					$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
-				EndIf
-			Else
-				$entry = $game
-				For $a = 2 To $entry[0]
-					$game = $entry[$a]
+		If $drmfree = "PC Gaming Wiki" Then
+			_FileCreate($freefle1)
+			$entries = StringSplit($read, @LF & "<tr>" & @LF, 1)
+			For $e = 2 To $entries[0]
+				$chunk = $entries[$e]
+				$entry = StringSplit($chunk, '</td></tr>', 1)
+				$entry = $entry[1]
+				$entry = StringSplit($entry, '</a>' & @LF & '</td>', 1)
+				$game = $entry[1]
+				If StringInStr($game, ' title="') < 1 Then $game = $entry[2]
+				$game = StringSplit($game, ' title="', 1)
+				If $game[0] = 2 Then
+					$game = $game[2]
 					$game = StringSplit($game, '">', 1)
 					$game = $game[2]
 					$game = StringSplit($game, '</a>', 1)
@@ -1273,40 +1330,206 @@ Func ParseTheDRMFreeList()
 					Else
 						$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
 					EndIf
+				Else
+					$entry = $game
+					For $a = 2 To $entry[0]
+						$game = $entry[$a]
+						$game = StringSplit($game, '">', 1)
+						$game = $game[2]
+						$game = StringSplit($game, '</a>', 1)
+						$game = $game[1]
+						If $games = "" Then
+							$games = "[" & $game & "]" & @CRLF & "drm-free=1"
+						Else
+							$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
+						EndIf
+					Next
+				EndIf
+				$notes = ""
+				$chunk = StringReplace($chunk, '<td style="text-align: center;">?' & @LF, '')
+				$chunk = StringReplace($chunk, '<td style="text-align: center;">✔' & @LF, '')
+				$chunk = StringReplace($chunk, '</td></tr>' & @LF, '')
+				$chunk = StringReplace($chunk, '</td></tr>', '')
+				$chunk = StringReplace($chunk, '</td>' & @LF, '')
+				$chunk = StringReplace($chunk, '<td>', '')
+				$chunk = StringReplace($chunk, '</p>', '')
+				$chunk = StringReplace($chunk, "<code>", "'")
+				$chunk = StringReplace($chunk, "</code>", "'")
+				$chunk = StringReplace($chunk, '</tbody></table>', '')
+				$chunk = StringReplace($chunk, '<table class="wikitable" style="width: 100%">', '')
+				$chunk = StringReplace($chunk, '<tbody><tr>', '')
+				$chunk = StringReplace($chunk, "<b>", "(")
+				$chunk = StringReplace($chunk, "</b>", ")")
+				$chunk = StringReplace($chunk, "[", "")
+				$chunk = StringReplace($chunk, "]", "")
+				$chunk = StringSplit($chunk, @LF, 1)
+				For $c = 1 To $chunk[0]
+					$line = $chunk[$c]
+					If StringInStr($line, 'href="') < 1 And StringInStr($line, '<td style=') < 1 Then
+						$notes = StringStripWS($line, 7)
+						If $notes <> "" Then ExitLoop
+					EndIf
 				Next
-			EndIf
-			$notes = ""
-			$chunk = StringReplace($chunk, '<td style="text-align: center;">?' & @LF, '')
-			$chunk = StringReplace($chunk, '<td style="text-align: center;">✔' & @LF, '')
-			$chunk = StringReplace($chunk, '</td></tr>' & @LF, '')
-			$chunk = StringReplace($chunk, '</td></tr>', '')
-			$chunk = StringReplace($chunk, '</td>' & @LF, '')
-			$chunk = StringReplace($chunk, '<td>', '')
-			$chunk = StringReplace($chunk, '</p>', '')
-			$chunk = StringReplace($chunk, "<code>", "'")
-			$chunk = StringReplace($chunk, "</code>", "'")
-			$chunk = StringReplace($chunk, '</tbody></table>', '')
-			$chunk = StringReplace($chunk, '<table class="wikitable" style="width: 100%">', '')
-			$chunk = StringReplace($chunk, '<tbody><tr>', '')
-			$chunk = StringReplace($chunk, "<b>", "(")
-			$chunk = StringReplace($chunk, "</b>", ")")
-			$chunk = StringReplace($chunk, "[", "")
-			$chunk = StringReplace($chunk, "]", "")
-			$chunk = StringSplit($chunk, @LF, 1)
-			For $c = 1 To $chunk[0]
-				$line = $chunk[$c]
-				If StringInStr($line, 'href="') < 1 And StringInStr($line, '<td style=') < 1 Then
-					$notes = StringStripWS($line, 7)
-					If $notes <> "" Then ExitLoop
+				If $notes <> "" Then $games = $games & @CRLF & "notes=" & $notes
+			Next
+			$games = StringReplace($games, "&#39;", "'")
+			$games = StringReplace($games, "&amp;", "&")
+			FileWrite($freefle1, $games)
+			$entries = $entries[0]
+			MsgBox(262144, "DRM-Free Games", $entries & " found.", 3, $ListGUI)
+		ElseIf $drmfree = "Steam Fandom" Then
+			_FileCreate($freefle2)
+			Local $skipped, $skipping
+			$skipped = ""
+			;$read = StringSplit($read, "List of DRM-free software on Steam</span></h2>", 1)
+			$read = StringSplit($read, "DRM-free game codes</b></span></h3>", 1)
+			$read = $read[1]
+			$entries = StringSplit($read, @LF & "<tr>" & @LF, 1)
+			For $e = 2 To $entries[0]
+				$skipping = ""
+				$chunk = $entries[$e]
+				$entry = StringSplit($chunk, '</a>', 1)
+				If $entry[0] > 1 Then
+					$entry = $entry[1]
+					$entry = StringSplit($entry, '">', 1)
+					If $entry[0] = 2 Then
+						$game = $entry[2]
+						If $game = "" Then
+							$skipping = 1
+						Else
+							If $games = "" Then
+								$games = "[" & $game & "]" & @CRLF & "drm-free=1"
+							Else
+								If StringInStr($games, "[" & $game & "]") > 0 Then
+									If $skipped = "" Then
+										$skipped = $game
+									Else
+										$skipped = $skipped & @LF & $game
+									EndIf
+									$skipping = 1
+								Else
+									$games = $games & @CRLF & "[" & $game & "]" & @CRLF & "drm-free=1"
+								EndIf
+							EndIf
+						EndIf
+					Else
+						$skipping = 1
+					EndIf
+				Else
+					$skipping = 1
+				EndIf
+				If $skipping = "" Then
+					$notes = ""
+					$chunk = StringReplace($chunk, '<td style="text-align: center;">✔' & @LF, '')
+					$chunk = StringReplace($chunk, '<td style="text-align: center;">n/a' & @LF, '')
+					$chunk = StringReplace($chunk, '<td style="text-align: center;">?' & @LF, '')
+					$chunk = StringReplace($chunk, '<td style="text-align: center;">âœ˜' & @LF, '')
+					$chunk = StringReplace($chunk, '<td rowspan="2">' & @LF, '')
+					$chunk = StringReplace($chunk, '<td rowspan="3">' & @LF, '')
+					$chunk = StringReplace($chunk, '<td rowspan="4">' & @LF, '')
+					$chunk = StringReplace($chunk, '<td rowspan="5">' & @LF, '')
+					$chunk = StringReplace($chunk, '</td></tr></tbody></table>' & @LF, '')
+					$chunk = StringReplace($chunk, '</td></tr>' & @LF, '')
+					$chunk = StringReplace($chunk, '</td></tr>', '')
+					$chunk = StringReplace($chunk, '</td>' & @LF, '')
+					$chunk = StringReplace($chunk, '<td>', '')
+					$chunk = StringReplace($chunk, '<i>', '')
+					$chunk = StringReplace($chunk, '</i>', '')
+					$chunk = StringReplace($chunk, "<b>", "(")
+					$chunk = StringReplace($chunk, "</b>", ")")
+					$chunk = StringReplace($chunk, '<p>', '')
+					$chunk = StringReplace($chunk, '</p>', '')
+					$chunk = StringReplace($chunk, "<u>", "(")
+					$chunk = StringReplace($chunk, "</u>", ")")
+					$chunk = StringReplace($chunk, '<br />', '')
+					$chunk = StringReplace($chunk, '<hr />', '')
+					$chunk = StringReplace($chunk, '<h2>', '')
+					$chunk = StringReplace($chunk, '</h2>', '')
+					$chunk = StringReplace($chunk, '<h3>', '')
+					$chunk = StringReplace($chunk, '</h3>', '')
+					$chunk = StringReplace($chunk, '</span>', '')
+					$chunk = StringReplace($chunk, '<tbody><tr>', '')
+					$chunk = StringReplace($chunk, '<th>', '')
+					$chunk = StringReplace($chunk, '</th>', '')
+					$chunk = StringReplace($chunk, '</tr>', '')
+					$chunk = StringReplace($chunk, '<ul>', '')
+					$chunk = StringReplace($chunk, '</ul>', '')
+					$chunk = StringReplace($chunk, '<li>', '')
+					$chunk = StringReplace($chunk, '</li>', '')
+					$lines = StringSplit($chunk, @LF, 1)
+					For $c = 1 To $lines[0]
+						$line = $lines[$c]
+						If StringInStr($line, 'href="') > 0 Then
+							$chunk = StringReplace($chunk, $line, '')
+						ElseIf StringInStr($line, '<td style="') > 0 Then
+							$chunk = StringReplace($chunk, $line, '')
+						Else
+							$notes = $line
+							$delete = ""
+							While 1
+								$pos = StringInStr($notes, '<span class="')
+								If $pos > 0 Then
+									$end = StringInStr($notes, '">')
+									If $end > 0 Then
+										$end = $end + 2
+										$delete = StringMid($notes, $pos, $end - $pos)
+										$notes = StringReplace($notes, $delete, '')
+									Else
+										ExitLoop
+									EndIf
+								Else
+									ExitLoop
+								EndIf
+							WEnd
+							While 1
+								$pos = StringInStr($notes, '<table class="')
+								If $pos > 0 Then
+									$end = StringInStr($notes, '">')
+									If $end > 0 Then
+										$end = $end + 2
+										$delete = StringMid($notes, $pos, $end - $pos)
+										$notes = StringReplace($notes, $delete, '')
+									Else
+										ExitLoop
+									EndIf
+								Else
+									ExitLoop
+								EndIf
+							WEnd
+							While 1
+								$pos = StringInStr($notes, '<th style="')
+								If $pos > 0 Then
+									$end = StringInStr($notes, '">')
+									If $end > 0 Then
+										$end = $end + 2
+										$delete = StringMid($notes, $pos, $end - $pos)
+										$notes = StringReplace($notes, $delete, '')
+									Else
+										ExitLoop
+									EndIf
+								Else
+									ExitLoop
+								EndIf
+							WEnd
+							If $delete <> "" Then
+								$chunk = StringReplace($chunk, $line, $notes)
+								$notes = ""
+							EndIf
+						EndIf
+					Next
+					$notes = StringReplace($chunk, @LF, ' ')
+					$notes = StringStripWS($notes, 7)
+					$notes = StringReplace($notes, 'Title Win Mac Lin Remark', '')
+					$notes = StringReplace($notes, 'Title Win Mac Lin Note', '')
+					$notes = StringStripWS($notes, 7)
+					;$notes = StringReplace($notes, @LF, ' & ')
+					If $notes <> "" Then $games = $games & @CRLF & "notes=" & $notes
 				EndIf
 			Next
-			If $notes <> "" Then $games = $games & @CRLF & "notes=" & $notes
-		Next
-		$games = StringReplace($games, "&#39;", "'")
-		$games = StringReplace($games, "&amp;", "&")
-		FileWrite($freefle, $games)
-		$entries = $entries[0]
-		MsgBox(262144, "DRM-Free Games", $entries & " found.", 3, $ListGUI)
+			FileWrite($freefle2, $games)
+			$entries = $entries[0]
+			MsgBox(262144, "DRM-Free Games", $entries & " found." & @LF & @LF & "[Duplicates Skipped]" & @LF & $skipped, 0, $ListGUI)
+		EndIf
 	EndIf
 	_FileWriteLog($logfle, "Parsed the DRM-Free list.")
 EndFunc ;=> ParseTheDRMFreeList
@@ -1336,6 +1559,7 @@ Func SetStateOfControls($state)
 	GUICtrlSetState($Input_image, $state)
 	GUICtrlSetState($Button_list, $state)
 	GUICtrlSetState($Input_list, $state)
+	GUICtrlSetState($Combo_list, $state)
 	;
 	GUICtrlSetState($Button_down, $state)
 	GUICtrlSetState($Button_install, $state)
