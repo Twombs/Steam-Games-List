@@ -23,4 +23,4 @@ A DRM-Free list can be downloaded from the PC Gaming Wiki page, and then parsed 
 
 An existing (installed) game folder can be copied or moved to a different location as a backup. This can aternatively be done using the TeraCopy program, or you can use 7-Zip to create a zipped file at the backup destination, or instead create a self-extracting execute file there with a basic install menu.
 
-NOT YET IMPLEMENTED - Interaction with SteamCMD to download and install your Steam games.
+Interaction with SteamCMD to download and install your Steam games.
