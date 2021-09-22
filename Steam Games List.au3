@@ -9,7 +9,8 @@
 #ce ----------------------------------------------------------------------------
 
 ; FUNCTIONS
-; MainGUI(), CharacterReplacements($text), GetLocalSteamGamesFolder(), ParseTheDRMFreeList(), SetStateOfControls($state)
+; MainGUI()
+; AddTextToInput($text, $what), CharacterReplacements($text), GetLocalSteamGamesFolder(), ParseTheDRMFreeList(), SetStateOfControls($state)
 
 #include <Constants.au3>
 #include <GUIConstantsEx.au3>
@@ -28,17 +29,17 @@
 
 _Singleton("steam-games-list-timboli")
 
-Global $Button_backup, $Button_dest, $Button_destiny, $Button_down, $Button_exit, $Button_find, $Button_fold, $Button_id
-Global $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_opts, $Button_pass
-Global $Button_path, $Button_tera, $Button_title, $Button_user, $Button_zip, $Checkbox_dest, $Checkbox_find, $Checkbox_link
-Global $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera, $Checkbox_user, $Combo_backup, $Combo_list, $Input_dest
-Global $Input_find, $Input_id, $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size
-Global $Input_tera, $Input_title, $Input_user, $Input_zip, $List_games
+Global $Button_backup, $Button_code, $Button_dest, $Button_destiny, $Button_down, $Button_exit, $Button_find, $Button_fold
+Global $Button_id, $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_opts
+Global $Button_pass, $Button_path, $Button_tera, $Button_title, $Button_user, $Button_zip, $Checkbox_dest, $Checkbox_find
+Global $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera, $Checkbox_user, $Combo_backup
+Global $Combo_list, $Input_code, $Input_dest, $Input_find, $Input_id, $Input_image, $Input_index, $Input_link, $Input_list
+Global $Input_pass, $Input_path, $Input_size, $Input_tera, $Input_title, $Input_user, $Input_zip, $List_games
 
-Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $created, $delete, $dest, $display, $download, $drmfree, $e, $end
-Global $entries, $entry, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld, $image, $inifle
-Global $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result, $state, $SteamCMD
-Global $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $xmlfle
+Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $code, $created, $delete, $dest, $display, $download, $drmfree
+Global $e, $end, $entries, $entry, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld, $image
+Global $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result, $state
+Global $SteamCMD, $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $what, $xmlfle
 
 $created = "September 2021"
 $freefle1 = @ScriptDir & "\DRMfree.ini"
@@ -71,7 +72,7 @@ If @error = 0 And $result <> "" Then
 		$download = InetGet($URL, $xmlfle, 0, 0)
 		InetClose($download)
 	Else
-		MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $GOGcliGUI)
+		MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $ListGUI)
 	EndIf
 	SplashOff()
 EndIf
@@ -133,10 +134,10 @@ Exit
 Func MainGUI()
 	Local $Edit_notes, $Group_backup, $Group_list, $Label_free, $Label_index, $Label_notes, $Label_size
 	;
-	Local $altpth, $ans, $bakfile, $copy, $decrypt, $decrypted, $destfld, $drv, $encrypted, $exefile, $exStyle
-	Local $find, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left, $listurl, $mass, $method
-	Local $num, $ontop, $parent, $password, $pth, $size, $space, $store, $style, $tabs, $teracopy, $top, $type
-	Local $username, $volfile, $width, $winsize, $zipfile
+	Local $altpth, $ans, $bakfile, $copy, $decrypt, $decrypted, $destfld, $downfold, $drv, $encrypted, $exefile
+	Local $exStyle, $find, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left, $listurl, $mass
+	Local $method, $num, $ontop, $params, $parent, $password, $pth, $size, $space, $store, $style, $tabs, $teracopy
+	Local $top, $type, $username, $volfile, $width, $winsize, $zipfile
 	;
 	$exStyle = $WS_EX_TOPMOST
 	$height = 510
@@ -333,9 +334,12 @@ Func MainGUI()
 	GUICtrlSetState($Checkbox_link, $store)
 	;
 	;$listurl = IniRead($inifle, "DRM-Free List", "url", "")
-	$drmfree = "PC Gaming Wiki"
+	$drmfree = IniRead($inifle, "DRM-Free", "page", "")
+	If $drmfree = "" Then
+		$drmfree = "PC Gaming Wiki"
+		IniWrite($inifle, "DRM-Free", "page", $drmfree)
+	EndIf
 	GUICtrlSetData($Combo_list, "PC Gaming Wiki|Steam Fandom", $drmfree)
-	$freefle = $freefle1
 	$listurl = IniRead($inifle, "Steam Fandom", "url", "")
 	If $listurl = "" Then
 		$listurl = "https://steam.fandom.com/wiki/List_of_DRM-free_games"
@@ -346,7 +350,24 @@ Func MainGUI()
 		$listurl = "https://www.pcgamingwiki.com/wiki/The_Big_List_of_DRM-Free_Games_on_Steam"
 		IniWrite($inifle, "PC Gaming Wiki", "url", $listurl)
 	EndIf
+	If $drmfree = "PC Gaming Wiki" Then
+		$freefle = $freefle1
+		$listurl = "https://www.pcgamingwiki.com/wiki/The_Big_List_of_DRM-Free_Games_on_Steam"
+	ElseIf $drmfree = "Steam Fandom" Then
+		$freefle = $freefle2
+		$listurl = "https://steam.fandom.com/wiki/List_of_DRM-free_games"
+	EndIf
 	GUICtrlSetData($Input_list, $listurl)
+	;
+	$encrypted = IniRead($inifle, "Steam Guard", "code", "")
+	If $encrypted <> "" Then
+		_Crypt_Startup()
+		$code = _Crypt_DecryptData($encrypted, "d@C3fkk7x_", $CALG_AES_256)
+		_Crypt_Shutdown()
+		$code = BinaryToString($code)
+	Else
+		$code = ""
+	EndIf
 	;
 	$encrypted = IniRead($inifle, "Username", "string", "")
 	If $encrypted <> "" Then
@@ -472,25 +493,17 @@ Func MainGUI()
 			Case $msg = $Button_user And $buttxt = "More"
 				; Save the Username
 				$username = GUICtrlRead($Input_user)
-				If _IsPressed("11") And $username <> "" Then
-					GUICtrlDelete($Input_user)
-					If $decrypt = "" Then
-						$decrypt = 1
-						$Input_user = GUICtrlCreateInput("", 80, 550, 95, 20)
-					Else
-						$decrypt = ""
-						$Input_user = GUICtrlCreateInput("", 80, 550, 95, 20, $ES_PASSWORD)
-					EndIf
-					GUICtrlSetData($Input_user, $username)
+				$username = AddTextToInput($username, "Username")
+				GUICtrlSetData($Input_user, $username)
+				If $username = "" Then
+					$encrypted = $username
 				Else
-					If $username <> "" Then
-						_Crypt_Startup()
-						$encrypted = _Crypt_EncryptData($username, "d@C3fkk7x_", $CALG_AES_256)
-						_Crypt_Shutdown()
-					EndIf
-					IniWrite($inifle, "Username", "string", $encrypted)
-					_FileWriteLog($logfle, "Saved a username.")
+					_Crypt_Startup()
+					$encrypted = _Crypt_EncryptData($username, "d@C3fkk7x_", $CALG_AES_256)
+					_Crypt_Shutdown()
 				EndIf
+				IniWrite($inifle, "Username", "string", $encrypted)
+				_FileWriteLog($logfle, "Saved a username.")
 			Case $msg = $Button_title
 				; Click to copy title to clipboard
 				$title = GUICtrlRead($Input_title)
@@ -513,24 +526,17 @@ Func MainGUI()
 			Case $msg = $Button_pass And $buttxt = "More"
 				; Save the Password
 				$password = GUICtrlRead($Input_pass)
-				If _IsPressed("11") And $password <> "" Then
-					GUICtrlDelete($Input_pass)
-					If $decrypted = "" Then
-						$decrypted = 1
-						$Input_pass = GUICtrlCreateInput("", 310, 550, 100, 20)
-					Else
-						$decrypted = ""
-						$Input_pass = GUICtrlCreateInput("", 310, 550, 100, 20, $ES_PASSWORD)
-					EndIf
+				$password = AddTextToInput($password, "Password")
+				GUICtrlSetData($Input_pass, $password)
+				If $password = "" Then
+					$encrypted = $password
 				Else
-					If $password <> "" Then
-						_Crypt_Startup()
-						$password = _Crypt_EncryptData($password, "d@C3fkk7x_", $CALG_AES_256)
-						_Crypt_Shutdown()
-					EndIf
-					IniWrite($inifle, "Password", "string", $password)
-					_FileWriteLog($logfle, "Saved a password.")
+					_Crypt_Startup()
+					$encrypted = _Crypt_EncryptData($password, "d@C3fkk7x_", $CALG_AES_256)
+					_Crypt_Shutdown()
 				EndIf
+				IniWrite($inifle, "Password", "string", $encrypted)
+				_FileWriteLog($logfle, "Saved a password.")
 			Case $msg = $Button_path And $buttxt = "More"
 				; Browse to set the Steam games folder path
 				;MsgBox(262192, "Status Report", "This feature is currently unavailable!", 0, $ListGUI)
@@ -555,11 +561,27 @@ Func MainGUI()
 					$width = $winsize[0]
 					$height = $winsize[1]
 					WinMove($ListGUI, "", Default, Default, 476, 673)
-					$Button_user = GUICtrlCreateButton("USERNAME", 10, 510, 75, 20)
+					;
+					$Input_zip = GUICtrlCreateInput("", 10, 510, 220, 20)
+					GUICtrlSetTip($Input_zip, "Path of the 7-Zip program!")
+					$Button_zip = GUICtrlCreateButton("7-Zip", 230, 510, 50, 20)
+					GUICtrlSetFont($Button_zip, 7, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_zip, "Browse to set the 7-Zip path!")
+					GUICtrlSetData($Input_zip, $7zip)
+					;
+					$Button_code = GUICtrlCreateButton("STEAM GUARD CODE", 290, 510, 120, 20)
+					GUICtrlSetFont($Button_code, 6, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_code, "Set the Steam Guard code!")
+					$Input_code = GUICtrlCreateInput("", 410, 510, 50, 20, $ES_PASSWORD)
+					GUICtrlSetTip($Input_code, "Users Steam Guard code!")
+					GUICtrlSetData($Input_code, $code)
+					;
+					$Button_user = GUICtrlCreateButton("USERNAME", 10, 540, 75, 20)
 					GUICtrlSetFont($Button_user, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_user, "Save the Username!")
-					$Input_user = GUICtrlCreateInput("", 85, 510, 100, 20, $ES_PASSWORD)
-					$Checkbox_user = GUICtrlCreateCheckbox("Query", 190, 510, 45, 20)
+					$Input_user = GUICtrlCreateInput("", 85, 540, 90, 20, $ES_PASSWORD)
+					GUICtrlSetTip($Input_user, "Username!")
+					$Checkbox_user = GUICtrlCreateCheckbox("Query", 179, 540, 45, 20)
 					GUICtrlSetTip($Checkbox_user, "Query for Username each time!")
 					GUICtrlSetData($Input_user, $username)
 					GUICtrlSetState($Checkbox_user, $user)
@@ -568,11 +590,12 @@ Func MainGUI()
 						GUICtrlSetState($Input_user, $GUI_DISABLE)
 					EndIf
 					;
-					$Button_pass = GUICtrlCreateButton("PASSWORD", 245, 510, 75, 20)
+					$Button_pass = GUICtrlCreateButton("PASSWORD", 225, 540, 75, 20)
 					GUICtrlSetFont($Button_pass, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_pass, "Save the Password!")
-					$Input_pass = GUICtrlCreateInput("", 320, 510, 90, 20, $ES_PASSWORD)
-					$Checkbox_pass = GUICtrlCreateCheckbox("Query", 415, 510, 45, 20)
+					$Input_pass = GUICtrlCreateInput("", 300, 540, 111, 20, $ES_PASSWORD)
+					GUICtrlSetTip($Input_pass, "Password!")
+					$Checkbox_pass = GUICtrlCreateCheckbox("Query", 415, 540, 45, 20)
 					GUICtrlSetTip($Checkbox_pass, "Query for Password each time!")
 					GUICtrlSetData($Input_pass, $password)
 					GUICtrlSetState($Checkbox_pass, $pass)
@@ -581,9 +604,9 @@ Func MainGUI()
 						GUICtrlSetState($Input_pass, $GUI_DISABLE)
 					EndIf
 					;
-					$Input_path = GUICtrlCreateInput("", 10, 540, 290, 20)
+					$Input_path = GUICtrlCreateInput("", 10, 565, 290, 20)
 					GUICtrlSetTip($Input_path, "Path of the Steam games folder!")
-					$Button_path = GUICtrlCreateButton("GAMES FOLDER", 300, 540, 95, 20)
+					$Button_path = GUICtrlCreateButton("GAMES FOLDER", 300, 565, 95, 20)
 					GUICtrlSetFont($Button_path, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_path, "Browse to set the Steam games folder path!")
 					If $alternate = 4 Then
@@ -593,20 +616,20 @@ Func MainGUI()
 					Else
 						GUICtrlSetData($Input_path, $altpth)
 					EndIf
-					$Checkbox_path = GUICtrlCreateCheckbox("Alternate", 400, 540, 65, 20)
+					$Checkbox_path = GUICtrlCreateCheckbox("Alternate", 400, 565, 65, 20)
 					GUICtrlSetTip($Checkbox_path, "Use an alternate games folder!")
 					GUICtrlSetState($Checkbox_path, $alternate)
 					;
-					$Input_dest = GUICtrlCreateInput("", 10, 565, 285, 20)
+					$Input_dest = GUICtrlCreateInput("", 10, 590, 285, 20)
 					GUICtrlSetTip($Input_dest, "Destination path of the backup!")
-					$Button_dest = GUICtrlCreateButton("DESTINATION", 295, 565, 85, 20)
+					$Button_dest = GUICtrlCreateButton("DESTINATION", 295, 590, 85, 20)
 					GUICtrlSetFont($Button_dest, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_dest, "Browse to set the destination path!")
 					GUICtrlSetData($Input_dest, $destfld)
-					$Checkbox_dest = GUICtrlCreateCheckbox("Query", 385, 565, 45, 20)
+					$Checkbox_dest = GUICtrlCreateCheckbox("Query", 385, 590, 45, 20)
 					GUICtrlSetTip($Checkbox_dest, "Query for Destination each time!")
 					GUICtrlSetState($Checkbox_dest, $dest)
-					$Button_destiny = GUICtrlCreateButton("D", 435, 564, 25, 22, $BS_ICON)
+					$Button_destiny = GUICtrlCreateButton("D", 435, 589, 25, 22, $BS_ICON)
 					GUICtrlSetTip($Button_destiny, "Open the destination folder!")
 					GUICtrlSetImage($Button_destiny, $shell, $icoD, 0)
 					If $dest = 1 Then
@@ -615,29 +638,26 @@ Func MainGUI()
 						GUICtrlSetState($Button_destiny, $GUI_DISABLE)
 					EndIf
 					;
-					$Input_tera = GUICtrlCreateInput("", 10, 590, 338, 20)
+					$Input_tera = GUICtrlCreateInput("", 10, 615, 338, 20)
 					GUICtrlSetTip($Input_tera, "Path of the TeraCopy program!")
-					$Button_tera = GUICtrlCreateButton("TeraCopy", 348, 590, 70, 20)
+					$Button_tera = GUICtrlCreateButton("TeraCopy", 348, 615, 70, 20)
 					GUICtrlSetFont($Button_tera, 7, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_tera, "Browse to set the TeraCopy path!")
 					GUICtrlSetData($Input_tera, $teracopy)
-					$Checkbox_tera = GUICtrlCreateCheckbox("Use", 423, 590, 40, 20)
+					$Checkbox_tera = GUICtrlCreateCheckbox("Use", 423, 615, 40, 20)
 					GUICtrlSetTip($Checkbox_tera, "Use the TeraCopy program!")
 					GUICtrlSetState($Checkbox_tera, $tera)
 					If $tera = 4 Then
 						GUICtrlSetState($Input_tera, $GUI_DISABLE)
 						GUICtrlSetState($Button_tera, $GUI_DISABLE)
 					EndIf
-					;
-					$Input_zip = GUICtrlCreateInput("", 10, 615, 400, 20)
-					GUICtrlSetTip($Input_zip, "Path of the 7-Zip program!")
-					$Button_zip = GUICtrlCreateButton("7-Zip", 410, 615, 50, 20)
-					GUICtrlSetFont($Button_zip, 7, 600, 0, "Small Fonts")
-					GUICtrlSetTip($Button_zip, "Browse to set the 7-Zip path!")
-					GUICtrlSetData($Input_zip, $7zip)
 				ElseIf $buttxt = "More" Then
 					$buttxt = "Less"
 					GUICtrlSetData($Button_opts, $buttxt)
+					GUICtrlDelete($Input_zip)
+					GUICtrlDelete($Button_zip)
+					GUICtrlDelete($Button_code)
+					GUICtrlDelete($Input_code)
 					GUICtrlDelete($Button_user)
 					GUICtrlDelete($Input_user)
 					GUICtrlDelete($Checkbox_user)
@@ -654,8 +674,6 @@ Func MainGUI()
 					GUICtrlDelete($Input_tera)
 					GUICtrlDelete($Button_tera)
 					GUICtrlDelete($Checkbox_tera)
-					GUICtrlDelete($Input_zip)
-					GUICtrlDelete($Button_zip)
 					WinMove($ListGUI, "", Default, Default, $width + 6, $height + 28)
 				EndIf
 			Case $msg = $Button_log
@@ -683,13 +701,65 @@ Func MainGUI()
 					$title = CharacterReplacements($title)
 					$gameID = GUICtrlRead($Input_id)
 					If $gameID <> "" Then
-						If FileExists($SteamCMD) Then
-							MsgBox(262192, "Status Report", "This feature is currently unavailable!", 0, $ListGUI)
-							;$ping = Ping("gog.com", 5000)
-							;If $ping > 0 Then
-							;Else
-							;	MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $GOGcliGUI)
-							;EndIf
+						If $alternate = 4 Then
+							$downfold = $gamesfld
+						Else
+							$downfold = $altpth
+						EndIf
+						If FileExists($downfold) Then
+							$downfold = $downfold & "\" & $title
+							If FileExists($downfold) Then
+								$ans = MsgBox(262144 + 33, "Alert & Query", "WARNING - Game title folder already exists" _
+									& @LF & "at the chosen destination path." _
+									& @LF & "Do you want to continue?" & @LF _
+									& @LF & "OK = Continue." _
+									& @LF & "CANCEL = Abort downloading." & @LF _
+									& @LF & "NOTE - This could be due to an incomplete" _
+									& @LF & "prior download or maybe you are updating.", 0, $ListGUI)
+								If $ans = 2 Then
+									ContinueLoop
+								EndIf
+							EndIf
+							If FileExists($SteamCMD) Then
+								;MsgBox(262192, "Status Report", "This feature is currently unavailable!", 0, $ListGUI)
+								SetStateOfControls($GUI_DISABLE)
+								$find = GUICtrlRead($Input_find)
+								GUICtrlSetBkColor($Input_find, $COLOR_RED)
+								GUICtrlSetData($Input_find, "Please Wait!")
+								_FileWriteLog($logfle, "Downloading - " & $title)
+								$ping = Ping("gog.com", 5000)
+								If $ping > 0 Then
+									;steamcmd.exe +login username password +set_steam_guard_code CODE +force_install_dir "E:\GAMES\steamapps\common\10 Second Ninja X" +app_update 435790 +quit
+									;RunWait($SteamCMD, @ScriptDir)
+									$params = ' +login '
+									If $username = "" Or $user = 1 Then
+										$username = AddTextToInput($username, "Username")
+									EndIf
+									If $password = "" Or $pass = 1 Then
+										$password = AddTextToInput($password, "Password")
+									EndIf
+									If $username <> "" And $password <> "" Then
+										$params = $params & $username & " " & $password
+										If $code <> "" Then $params = $params & ' +set_steam_guard_code ' & $code
+									Else
+										$params = $params & 'anonymous'
+									EndIf
+									$params = $params & ' +force_install_dir "' & $downfold & '" +app_update ' & $gameID & ' +quit'
+									RunWait($SteamCMD & $params, @ScriptDir)
+									_FileWriteLog($logfle, "Downloading Finished.")
+								Else
+									_FileWriteLog($logfle, "Downloading Failed - Ping error.")
+									MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 0, $ListGUI)
+								EndIf
+								GUICtrlSetBkColor($Input_find, $CLR_DEFAULT)
+								GUICtrlSetData($Input_find, $find)
+								SetStateOfControls($GUI_ENABLE)
+							Else
+								MsgBox(262192, "Program Error", "The required 'steamcmd.exe' file could not be found!" & @LF _
+									& "It should be in the same folder as this program.", 0, $ListGUI)
+							EndIf
+						Else
+							MsgBox(262192, "Path Error", "Game folder not set or location doesn't exist!", 0, $ListGUI)
 						EndIf
 					EndIf
 				Else
@@ -709,14 +779,17 @@ Func MainGUI()
 					"a query, even though both credentials are stored encrypted in a file." & @LF & @LF & _
 					"Some games at Steam, are capable of being DRM-Free, though you" & @LF & _
 					"cannot find that information on the store game page. However you" & @LF & _
-					"can find online listings about which ones are DRM-Free, and one of" & @LF & _
-					"them can be used by this program, to make determinations easier." & @LF & @LF & _
+					"can find online listings about which ones are DRM-Free, and two of" & @LF & _
+					"those can be used by this program, to make determinations easier." & @LF & @LF & _
 					"CTRL held down while clicking folder button opens program folder." & @LF & @LF & _
-					"CTRL held down while clicking the password or username buttons" & @LF & _
-					"will reveal (toggle) the hidden text state." & @LF & @LF & _
+					"Third Party programs which have no ties to myself are required for" & @LF & _
+					"some processes to work (i.e. 7-Zip, SteamCMD and TeraCopy)." & @LF & @LF & _
+					"DISCLAIMER - While I have tried to ensure that nothing untoward" & @LF & _
+					"happens, you use this program at your own risk (no guarantees)." & @LF & @LF & _
 					"BIG THANKS as always to Jon & AutoIt developer etc team." & @LF & _
 					"BIG THANKS to the developers of 7-Zip." & @LF & _
-					"BIG THANKS to Steam Developers for SteamCMD." & @LF & _
+					"BIG THANKS to the developers of TeraCopy." & @LF & _
+					"BIG THANKS to the developers of SteamCMD." & @LF & _
 					"BIG THANKS to those who provided & created (update) the online" & @LF & _
 					"'Steam Fandom' page for 'DRM-Free' Steam games." & @LF & _
 					"BIG THANKS to those who provided & created (update) the online" & @LF & _
@@ -868,6 +941,20 @@ Func MainGUI()
 					IniWrite($inifle, "Destination", "path", $destfld)
 					GUICtrlSetData($Input_dest, $destfld)
 				EndIf
+			Case $msg = $Button_code And $buttxt = "More"
+				; Set the Steam Guard code
+				$code = GUICtrlRead($Input_code)
+				$code = AddTextToInput($code, "Steam Guard Code")
+				GUICtrlSetData($Input_code, $code)
+				If $code = "" Then
+					$encrypted = $code
+				Else
+					_Crypt_Startup()
+					$encrypted = _Crypt_EncryptData($code, "d@C3fkk7x_", $CALG_AES_256)
+					_Crypt_Shutdown()
+				EndIf
+				IniWrite($inifle, "Steam Guard", "code", $encrypted)
+				_FileWriteLog($logfle, "Saved a Steam Guard code.")
 			Case $msg = $Button_backup
 				; Backup the selected game folder to specified file type or folder
 				;MsgBox(262192, "Status Report", "This feature is currently incomplete!", 0, $ListGUI)
@@ -1147,6 +1234,7 @@ Func MainGUI()
 			Case $msg = $Combo_list
 				; Select the Online DRM-Free page
 				$drmfree = GUICtrlRead($Combo_list)
+				IniWrite($inifle, "DRM-Free", "page", $drmfree)
 				If $drmfree = "PC Gaming Wiki" Then
 					$listurl = IniRead($inifle, "PC Gaming Wiki", "url", "")
 					$freefle = $freefle1
@@ -1277,8 +1365,24 @@ Func MainGUI()
 EndFunc ;=> MainGUI
 
 
+Func AddTextToInput($text, $what)
+	$val = InputBox($what, "Enter or Edit the text.", $text, "", 200, 130, Default, Default, 0, $ListGUI)
+	If @error = 0 Then
+		$text = $val
+	EndIf
+	Return $text
+EndFunc ;=> AddTextToInput
+
 Func CharacterReplacements($text)
 	$text = StringReplace($text, ":", "")
+	$text = StringReplace($text, "\", "+")
+	$text = StringReplace($text, "/", "+")
+	$text = StringReplace($text, "<", "(")
+	$text = StringReplace($text, ">", ")")
+	$text = StringReplace($text, "*", "")
+	$text = StringReplace($text, '"', "'")
+	$text = StringReplace($text, '|', "+")
+	$text = StringReplace($text, '?', "!")
 	Return $text
 EndFunc ;=> CharacterReplacements
 
@@ -1567,6 +1671,10 @@ Func SetStateOfControls($state)
 	GUICtrlSetState($Combo_backup, $state)
 	;
 	If $buttxt = "More" Then
+		GUICtrlSetState($Input_zip, $state)
+		GUICtrlSetState($Button_zip, $state)
+		GUICtrlSetState($Button_code, $state)
+		GUICtrlSetState($Input_code, $state)
 		If $user = 4 Then
 			GUICtrlSetState($Button_user, $state)
 			GUICtrlSetState($Input_user, $state)
@@ -1599,7 +1707,5 @@ Func SetStateOfControls($state)
 		;GUICtrlSetState($Input_tera, $state)
 		;GUICtrlSetState($Button_tera, $state)
 		GUICtrlSetState($Checkbox_tera, $state)
-		GUICtrlSetState($Input_zip, $state)
-		GUICtrlSetState($Button_zip, $state)
 	EndIf
 EndFunc ;=> SetStateOfControls
