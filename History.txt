@@ -1,0 +1,2 @@
+
+(v1.1) When backing up to a ZIP or EXE file, a sub-folder is now created for it, using the game title. Two buttons have been added, NOTES and SAVE. The SAVE button downloads the game ICON file to the game destination folder, if it exists. The NOTES button creates a notes text file, containing DRM-Free List notes about the selected game, using the LIST name as title (i.e. Steam Fandom.txt). That file is saved to the game destination folder, if it exists.

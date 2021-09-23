@@ -30,16 +30,17 @@
 _Singleton("steam-games-list-timboli")
 
 Global $Button_backup, $Button_code, $Button_dest, $Button_destiny, $Button_down, $Button_exit, $Button_find, $Button_fold
-Global $Button_id, $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_opts
-Global $Button_pass, $Button_path, $Button_tera, $Button_title, $Button_user, $Button_zip, $Checkbox_dest, $Checkbox_find
-Global $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera, $Checkbox_user, $Combo_backup
-Global $Combo_list, $Input_code, $Input_dest, $Input_find, $Input_id, $Input_image, $Input_index, $Input_link, $Input_list
-Global $Input_pass, $Input_path, $Input_size, $Input_tera, $Input_title, $Input_user, $Input_zip, $List_games
+Global $Button_id, $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_notes
+Global $Button_opts, $Button_pass, $Button_path, $Button_save, $Button_tera, $Button_title, $Button_user, $Button_zip
+Global $Checkbox_dest, $Checkbox_find, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera
+Global $Checkbox_user, $Combo_backup, $Combo_list, $Input_code, $Input_dest, $Input_find, $Input_id, $Input_image
+Global $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_tera, $Input_title, $Input_user
+Global $Input_zip, $List_games
 
 Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $code, $created, $delete, $dest, $display, $download, $drmfree
-Global $e, $end, $entries, $entry, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld, $image
-Global $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result, $state
-Global $SteamCMD, $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $what, $xmlfle
+Global $e, $end, $entries, $entry, $fext, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld
+Global $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result
+Global $state, $SteamCMD, $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $what, $xmlfle
 
 $created = "September 2021"
 $freefle1 = @ScriptDir & "\DRMfree.ini"
@@ -49,7 +50,7 @@ $inifle = @ScriptDir & "\Settings.ini"
 $logfle = @ScriptDir & "\Log.txt"
 $xmlfle = @ScriptDir & "\Gameslist.xml"
 $SteamCMD = @ScriptDir & "\steamcmd.exe"
-$version = " (v1.0)"
+$version = " (v1.1)"
 
 $display = IniRead($inifle, "Array", "display", "")
 If $display = "" Then
@@ -134,10 +135,11 @@ Exit
 Func MainGUI()
 	Local $Edit_notes, $Group_backup, $Group_list, $Label_free, $Label_index, $Label_notes, $Label_size
 	;
-	Local $altpth, $ans, $bakfile, $copy, $decrypt, $decrypted, $destfld, $downfold, $drv, $encrypted, $exefile
-	Local $exStyle, $find, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left, $listurl, $mass
-	Local $method, $num, $ontop, $params, $parent, $password, $pth, $size, $space, $store, $style, $tabs, $teracopy
-	Local $top, $type, $username, $volfile, $width, $winsize, $zipfile
+	Local $altpth, $ans, $bakfile, $cnt, $copy, $decrypt, $decrypted, $destfld, $downfold, $drv, $encrypted, $exefile
+	Local $exStyle, $find, $gamefold, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left, $listurl
+	Local $mass, $method, $n, $num, $ontop, $params, $parent, $password, $pid, $pth, $savefile, $savefold, $shell
+	Local $size, $space, $store, $style, $tabs, $teracopy, $top, $type, $user32, $username, $volfile, $width, $winsize
+	Local $zipfile, $zipfld, $zipfold
 	;
 	$exStyle = $WS_EX_TOPMOST
 	$height = 510
@@ -247,9 +249,13 @@ Func MainGUI()
 	GUICtrlSetFont($Button_image, 7, 600, 0, "Small Fonts")
 	GUICtrlSetResizing($Button_image, $GUI_DOCKALL)
 	GUICtrlSetTip($Button_image, "Click to show the online image in your browser!")
-	$Input_image = GUICtrlCreateInput("", 55, 400, 405, 20)
+	$Input_image = GUICtrlCreateInput("", 55, 400, 355, 20)
 	GUICtrlSetResizing($Input_image, $GUI_DOCKALL)
 	GUICtrlSetTip($Input_image, "URL for online game icon!")
+	$Button_save = GUICtrlCreateButton("SAVE", 415, 400, 45, 20)
+	GUICtrlSetFont($Button_save, 6, 600, 0, "Small Fonts")
+	GUICtrlSetResizing($Button_save, $GUI_DOCKALL)
+	GUICtrlSetTip($Button_save, "Save the image to game destination folder!")
 	;
 	$Button_list = GUICtrlCreateButton("LIST", 10, 425, 40, 21)
 	GUICtrlSetFont($Button_list, 7, 600, 0, "Small Fonts")
@@ -283,7 +289,7 @@ Func MainGUI()
 	GUICtrlSetResizing($Combo_backup, $GUI_DOCKALL)
 	;
 	; OS SETTINGS
-	$user = "C:\WINDOWS\system32\user32.dll"
+	$user32 = "C:\WINDOWS\system32\user32.dll"
 	$shell = @SystemDir & "\shell32.dll"
 	$icoD = -4
 	$icoI = -5
@@ -295,8 +301,8 @@ Func MainGUI()
 	GUICtrlSetImage($Button_opts, $shell, $icoS, 1)
 	GUICtrlSetImage($Button_fold, $shell, $icoD, 1)
 	GUICtrlSetImage($Button_log, $shell, $icoT, 1)
-	GUICtrlSetImage($Button_info, $user, $icoI, 1)
-	GUICtrlSetImage($Button_exit, $user, $icoX, 1)
+	GUICtrlSetImage($Button_info, $user32, $icoI, 1)
+	GUICtrlSetImage($Button_exit, $user32, $icoX, 1)
 	;
 	; SETTINGS
 	SetStateOfControls($GUI_DISABLE)
@@ -523,6 +529,49 @@ Func MainGUI()
 					IniWrite($inifle, "TeraCopy", "path", $teracopy)
 					GUICtrlSetData($Input_tera, $teracopy)
 				EndIf
+			Case $msg = $Button_save
+				; Save the image to game destination folder
+				$image = GUICtrlRead($Input_image)
+				If $image <> "" And StringLeft($image, 4) = "http" Then
+					$title = GUICtrlRead($Input_title)
+					If $title <> "" Then
+						$title = CharacterReplacements($title)
+						If FileExists($destfld) Then
+							$fext = StringSplit($image, ".", 1)
+							$fext = $fext[$fext[0]]
+							If $fext <> "" Then
+								$savefile = "GameIcon." & $fext
+								$savefold = $destfld & "\" & $title
+								If FileExists($savefold) Then
+									$savefile = $savefold & "\" & $savefile
+									$ping = Ping("gog.com", 5000)
+									If $ping > 0 Then
+										$download = InetGet($image, $savefile, 0, 0)
+										InetClose($download)
+										If FileExists($savefile) Then
+											_FileWriteLog($logfle, "Downloaded the '" & $title & "' game icon image file.")
+										Else
+											_FileWriteLog($logfle, "Download Error - File not found.")
+											MsgBox(262192, "Download Error", "File not found!", 3, $ListGUI)
+										EndIf
+									Else
+										MsgBox(262192, "Web Error", "No connection detected or Ping took too long!", 3, $ListGUI)
+									EndIf
+								Else
+									MsgBox(262192, "Path Error", "Game destination folder doesn't exist!", 3, $ListGUI)
+								EndIf
+							Else
+								MsgBox(262192, "Image Error", "Could not determine image file type!", 3, $ListGUI)
+							EndIf
+						Else
+							MsgBox(262192, "Path Error", "Destination folder not set or doesn't exist!", 3, $ListGUI)
+						EndIf
+					Else
+						MsgBox(262192, "Usage Error", "No title selected!", 3, $ListGUI)
+					EndIf
+				Else
+					MsgBox(262192, "Icon Error", "No image file linke is listed, or incorrect format!", 6, $ListGUI)
+				EndIf
 			Case $msg = $Button_pass And $buttxt = "More"
 				; Save the Password
 				$password = GUICtrlRead($Input_pass)
@@ -620,15 +669,18 @@ Func MainGUI()
 					GUICtrlSetTip($Checkbox_path, "Use an alternate games folder!")
 					GUICtrlSetState($Checkbox_path, $alternate)
 					;
-					$Input_dest = GUICtrlCreateInput("", 10, 590, 285, 20)
+					$Input_dest = GUICtrlCreateInput("", 10, 590, 230, 20)
 					GUICtrlSetTip($Input_dest, "Destination path of the backup!")
-					$Button_dest = GUICtrlCreateButton("DESTINATION", 295, 590, 85, 20)
+					$Button_dest = GUICtrlCreateButton("DESTINATION", 240, 590, 85, 20)
 					GUICtrlSetFont($Button_dest, 6, 600, 0, "Small Fonts")
 					GUICtrlSetTip($Button_dest, "Browse to set the destination path!")
 					GUICtrlSetData($Input_dest, $destfld)
-					$Checkbox_dest = GUICtrlCreateCheckbox("Query", 385, 590, 45, 20)
+					$Checkbox_dest = GUICtrlCreateCheckbox("Query", 330, 590, 45, 20)
 					GUICtrlSetTip($Checkbox_dest, "Query for Destination each time!")
 					GUICtrlSetState($Checkbox_dest, $dest)
+					$Button_notes = GUICtrlCreateButton("NOTES", 380, 590, 50, 20)
+					GUICtrlSetFont($Button_notes, 6, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_notes, "Save selected notes to destination game folder!")
 					$Button_destiny = GUICtrlCreateButton("D", 435, 589, 25, 22, $BS_ICON)
 					GUICtrlSetTip($Button_destiny, "Open the destination folder!")
 					GUICtrlSetImage($Button_destiny, $shell, $icoD, 0)
@@ -670,11 +722,44 @@ Func MainGUI()
 					GUICtrlDelete($Input_dest)
 					GUICtrlDelete($Button_dest)
 					GUICtrlDelete($Checkbox_dest)
+					GUICtrlDelete($Button_notes)
 					GUICtrlDelete($Button_destiny)
 					GUICtrlDelete($Input_tera)
 					GUICtrlDelete($Button_tera)
 					GUICtrlDelete($Checkbox_tera)
 					WinMove($ListGUI, "", Default, Default, $width + 6, $height + 28)
+				EndIf
+			Case $msg = $Button_notes And $buttxt = "More"
+				; Save selected notes to destination game folder
+				If $notes <> "" Then
+					$title = GUICtrlRead($Input_title)
+					If $title <> "" Then
+						$title = CharacterReplacements($title)
+						If FileExists($destfld) Then
+							$drmfree = GUICtrlRead($Combo_list)
+							If $drmfree = "PC Gaming Wiki" Then
+								$savefile = "PC Gaming Wiki.txt"
+							ElseIf $drmfree = "Steam Fandom" Then
+								$savefile = "Steam Fandom.txt"
+							EndIf
+							$savefold = $destfld & "\" & $title
+							If FileExists($savefold) Then
+								$savefile = $savefold & "\" & $savefile
+								_FileCreate($savefile)
+								Sleep(500)
+								FileWrite($savefile, $notes)
+								_FileWriteLog($logfle, "Saved a DRM-Free List notes file for '" & $title & "'.")
+							Else
+								MsgBox(262192, "Path Error", "Game destination folder doesn't exist!", 3, $ListGUI)
+							EndIf
+						Else
+							MsgBox(262192, "Path Error", "Destination folder not set or doesn't exist!", 3, $ListGUI)
+						EndIf
+					Else
+						MsgBox(262192, "Usage Error", "No title selected!", 3, $ListGUI)
+					EndIf
+				Else
+					MsgBox(262192, "Notes Error", "Notes don't exist for the selected game," & @LF & "with the current 'DRM-Free List' option!", 6, $ListGUI)
 				EndIf
 			Case $msg = $Button_log
 				; View the Log Record file
@@ -843,7 +928,6 @@ Func MainGUI()
 									$ind = $idx
 									_GUICtrlListBox_SetCurSel($List_games, $ind)
 									_GUICtrlListBox_ClickItem($List_games, $ind, "left", False, 1, 0)
-									$found = 1
 									ExitLoop
 								EndIf
 								If $c = $cnt - 2 Then
@@ -932,6 +1016,8 @@ Func MainGUI()
 						WinSetOnTop($ListGUI, "", 0)
 					EndIf
 					ShellExecute($destfld)
+				Else
+					MsgBox(262192, "Path Error", "Destination folder not set or doesn't exist!", 3, $ListGUI)
 				EndIf
 			Case $msg = $Button_dest And $buttxt = "More"
 				; Browse to set the destination path
@@ -1058,63 +1144,72 @@ Func MainGUI()
 								& @LF & "into individual Volume files. In any case, 2 files are" _
 								& @LF & "created at least, for a self-executing EXE.", 0, $ListGUI)
 							If $ans = 1 Then
-								$pos = StringInStr($7zip, "\", 0, -1)
-								$zipfld = StringLeft($7zip, $pos - 1)
-								FileChangeDir($zipfld)
-								If $type = "ZIP" Then
-									$zipfile = $destfld & "\" & $title & ".7z"
-									If FileExists($zipfile) Then
-										$ans = MsgBox(262144 + 33, "Overwrite Query", "A zip file with the same name already exists." & @LF _
-											& @LF & "OK = Overwrite (replace)." _
-											& @LF & "CANCEL = Rename existing.", 0, $ListGUI)
-										If $ans = 1 Then
-											FileDelete($zipfile)
-										Else
-											$bakfile = $zipfile
-											$n = 1
-											While FileExists($bakfile)
-												$bakfile = $zipfile & $n
-												$n = $n + 1
-											WEnd
-											FileMove($zipfile, $bakfile)
+								$zipfold = $destfld & "\" & $title
+								If Not FileExists($zipfold) Then
+									DirCreate($zipfold)
+									Sleep(500)
+								EndIf
+								If FileExists($zipfold) Then
+									$pos = StringInStr($7zip, "\", 0, -1)
+									$zipfld = StringLeft($7zip, $pos - 1)
+									FileChangeDir($zipfld)
+									If $type = "ZIP" Then
+										$zipfile = $zipfold & "\" & $title & ".7z"
+										If FileExists($zipfile) Then
+											$ans = MsgBox(262144 + 33, "Overwrite Query", "A zip file with the same name already exists." & @LF _
+												& @LF & "OK = Overwrite (replace)." _
+												& @LF & "CANCEL = Rename existing.", 0, $ListGUI)
+											If $ans = 1 Then
+												FileDelete($zipfile)
+											Else
+												$bakfile = $zipfile
+												$n = 1
+												While FileExists($bakfile)
+													$bakfile = $zipfile & $n
+													$n = $n + 1
+												WEnd
+												FileMove($zipfile, $bakfile)
+											EndIf
+											;SetStateOfControls($GUI_ENABLE)
+											;ContinueLoop
 										EndIf
-										;SetStateOfControls($GUI_ENABLE)
-										;ContinueLoop
-									EndIf
-									GUICtrlSetBkColor($Input_find, $COLOR_RED)
-									GUICtrlSetData($Input_find, "Backing Up to File!")
-									_FileWriteLog($logfle, "Started the ZIP backup for - " & $title)
-									RunWait(@ComSpec & " /c " & '7z.exe a "' & $zipfile & '" "' & $gamefold & '" -v2g', "")
-									$volfile = $zipfile & ".001"
-									If FileExists($volfile) Then
-										If Not FileExists($zipfile & ".002") Then
-											FileMove($volfile, $zipfile)
+										GUICtrlSetBkColor($Input_find, $COLOR_RED)
+										GUICtrlSetData($Input_find, "Backing Up to File!")
+										_FileWriteLog($logfle, "Started the ZIP backup for - " & $title)
+										RunWait(@ComSpec & " /c " & '7z.exe a "' & $zipfile & '" "' & $gamefold & '" -v2g', "")
+										$volfile = $zipfile & ".001"
+										If FileExists($volfile) Then
+											If Not FileExists($zipfile & ".002") Then
+												FileMove($volfile, $zipfile)
+											EndIf
 										EndIf
-									EndIf
-								ElseIf $type = "EXE" Then
-									$exefile = $destfld & "\" & $title & ".exe"
-									If FileExists($exefile) Then
-										$ans = MsgBox(262144 + 33, "Overwrite Query", "A exe file with the same name already exists." & @LF _
-											& @LF & "OK = Overwrite (replace)." _
-											& @LF & "CANCEL = Rename existing.", 0, $ListGUI)
-										If $ans = 1 Then
-											FileDelete($exefile)
-										Else
-											$bakfile = $exefile
-											$n = 1
-											While FileExists($bakfile)
-												$bakfile = $exefile & $n
-												$n = $n + 1
-											WEnd
-											FileMove($exefile, $bakfile)
+									ElseIf $type = "EXE" Then
+										$exefile = $zipfold & "\" & $title & ".exe"
+										If FileExists($exefile) Then
+											$ans = MsgBox(262144 + 33, "Overwrite Query", "A exe file with the same name already exists." & @LF _
+												& @LF & "OK = Overwrite (replace)." _
+												& @LF & "CANCEL = Rename existing.", 0, $ListGUI)
+											If $ans = 1 Then
+												FileDelete($exefile)
+											Else
+												$bakfile = $exefile
+												$n = 1
+												While FileExists($bakfile)
+													$bakfile = $exefile & $n
+													$n = $n + 1
+												WEnd
+												FileMove($exefile, $bakfile)
+											EndIf
+											;SetStateOfControls($GUI_ENABLE)
+											;ContinueLoop
 										EndIf
-										;SetStateOfControls($GUI_ENABLE)
-										;ContinueLoop
+										GUICtrlSetBkColor($Input_find, $COLOR_RED)
+										GUICtrlSetData($Input_find, "Backing Up to File!")
+										_FileWriteLog($logfle, "Started the EXE backup for - " & $title)
+										RunWait(@ComSpec & " /c " & '7z.exe a -sfx7z.sfx "' & $exefile & '" "' & $gamefold & '" -v2g', "")
 									EndIf
-									GUICtrlSetBkColor($Input_find, $COLOR_RED)
-									GUICtrlSetData($Input_find, "Backing Up to File!")
-									_FileWriteLog($logfle, "Started the EXE backup for - " & $title)
-									RunWait(@ComSpec & " /c " & '7z.exe a -sfx7z.sfx "' & $exefile & '" "' & $gamefold & '" -v2g', "")
+								Else
+									MsgBox(262192, "Destination Error", "A folder for the zipped file could not be created!", 0, $ListGUI)
 								EndIf
 							Else
 								SetStateOfControls($GUI_ENABLE)
@@ -1661,6 +1756,7 @@ Func SetStateOfControls($state)
 	GUICtrlSetState($Checkbox_link, $state)
 	GUICtrlSetState($Button_image, $state)
 	GUICtrlSetState($Input_image, $state)
+	GUICtrlSetState($Button_save, $state)
 	GUICtrlSetState($Button_list, $state)
 	GUICtrlSetState($Input_list, $state)
 	GUICtrlSetState($Combo_list, $state)
