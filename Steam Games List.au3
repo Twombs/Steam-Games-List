@@ -9,7 +9,7 @@
 #ce ----------------------------------------------------------------------------
 
 ; FUNCTIONS
-; MainGUI()
+; MainGUI(), SetupGUI()
 ; AddTextToInput($text, $what), CharacterReplacements($text), GetLocalSteamGamesFolder(), ParseTheDRMFreeList(), SetStateOfControls($state)
 
 #include <Constants.au3>
@@ -31,16 +31,17 @@ _Singleton("steam-games-list-timboli")
 
 Global $Button_backup, $Button_code, $Button_dest, $Button_destiny, $Button_down, $Button_exit, $Button_find, $Button_fold
 Global $Button_id, $Button_image, $Button_info, $Button_install, $Button_link, $Button_list, $Button_log, $Button_notes
-Global $Button_opts, $Button_pass, $Button_path, $Button_save, $Button_tera, $Button_title, $Button_user, $Button_zip
-Global $Checkbox_dest, $Checkbox_find, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_path, $Checkbox_tera
-Global $Checkbox_user, $Combo_backup, $Combo_list, $Input_code, $Input_dest, $Input_find, $Input_id, $Input_image
-Global $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_tera, $Input_title, $Input_user
-Global $Input_zip, $List_games
+Global $Button_opts, $Button_pass, $Button_path, $Button_save, $Button_set, $Button_tera, $Button_title, $Button_user
+Global $Button_zip, $Checkbox_dest, $Checkbox_find, $Checkbox_link, $Checkbox_ontop, $Checkbox_pass, $Checkbox_path
+Global $Checkbox_tera, $Checkbox_user, $Combo_backup, $Combo_list, $Input_code, $Input_dest, $Input_find, $Input_id
+Global $Input_image, $Input_index, $Input_link, $Input_list, $Input_pass, $Input_path, $Input_size, $Input_tera
+Global $Input_title, $Input_user, $Input_zip, $List_games
 
-Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $code, $created, $delete, $dest, $display, $download, $drmfree
-Global $e, $end, $entries, $entry, $fext, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games, $gamesfld
-Global $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos, $read, $result
-Global $state, $SteamCMD, $steamfold, $tera, $text, $title, $URL, $user, $userID, $val, $vdffile, $version, $what, $xmlfle
+Global $7zip, $a, $alternate, $array, $buttxt, $c, $chunk, $code, $compress, $created, $delete, $dest, $display, $download
+Global $drmfree, $e, $end, $entries, $entry, $fext, $freefle, $freefle1, $freefle2, $freelist, $g, $game, $gameID, $games
+Global $gamesfld, $image, $inifle, $line, $lines, $link, $ListGUI, $logfle, $musicfld, $notes, $pass, $path, $ping, $pos
+Global $read, $result, $split, $state, $SteamCMD, $steamfold, $tera, $text, $thread, $title, $URL, $user, $userID, $val
+Global $vdffile, $version, $what, $xmlfle
 
 $created = "September 2021"
 $freefle1 = @ScriptDir & "\DRMfree.ini"
@@ -50,7 +51,7 @@ $inifle = @ScriptDir & "\Settings.ini"
 $logfle = @ScriptDir & "\Log.txt"
 $xmlfle = @ScriptDir & "\Gameslist.xml"
 $SteamCMD = @ScriptDir & "\steamcmd.exe"
-$version = " (v1.1)"
+$version = " (v1.2)"
 
 $display = IniRead($inifle, "Array", "display", "")
 If $display = "" Then
@@ -135,19 +136,19 @@ Exit
 Func MainGUI()
 	Local $Edit_notes, $Group_backup, $Group_list, $Label_free, $Label_index, $Label_notes, $Label_size
 	;
-	Local $altpth, $ans, $bakfile, $cnt, $copy, $decrypt, $decrypted, $destfld, $downfold, $drv, $encrypted, $exefile
-	Local $exStyle, $find, $gamefold, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left, $listurl
-	Local $mass, $method, $n, $num, $ontop, $params, $parent, $password, $pid, $pth, $savefile, $savefold, $shell
-	Local $size, $space, $store, $style, $tabs, $teracopy, $top, $type, $user32, $username, $volfile, $width, $winsize
-	Local $zipfile, $zipfld, $zipfold
+	Local $altpth, $ans, $bakfile, $cnt, $comp, $copy, $decrypt, $decrypted, $destfld, $downfold, $drv, $encrypted
+	Local $exefile, $exStyle, $find, $gamefold, $height, $icoD, $icoI, $icoM, $icoS, $icoT, $icoX, $idx, $ind, $left
+	Local $listurl, $mass, $meth, $method, $n, $num, $ontop, $params, $parent, $password, $pid, $pth, $savefile
+	Local $savefold, $shell, $size, $space, $store, $style, $tabs, $teracopy, $top, $type, $user32, $username, $vol
+	Local $volfile, $width, $winpos, $winsize, $zipfile, $zipfld, $zipfold
 	;
 	$exStyle = $WS_EX_TOPMOST
-	$height = 510
-	$left = -1
-	$parent = 0
 	$style = $WS_OVERLAPPED + $WS_CAPTION + $WS_SYSMENU + $WS_VISIBLE + $WS_CLIPSIBLINGS + $WS_MINIMIZEBOX
-	$top = -1
+	$parent = 0
 	$width = 470
+	$height = 510
+	$left = IniRead($inifle, "Program Window", "left", @DesktopWidth - $width - 25)
+	$top = IniRead($inifle, "Program Window", "top", @DesktopHeight - $height - 60)
 	$ListGUI = GUICreate("Games Owned At Steam", $width, $height, $left, $top, $style, $exStyle, $parent)
 	GUISetBkColor($COLOR_YELLOW, $ListGUI)
 	;
@@ -330,7 +331,6 @@ Func MainGUI()
 		GUICtrlSetTip($Combo_backup, "Copy or Move the game folder to backup location!")
 		GUICtrlSetData($Button_backup, "FOLDER" & @LF & "BACKUP")
 	EndIf
-	;GUICtrlSetState($Combo_backup, $GUI_DISABLE)
 	;
 	$store = IniRead($inifle, "Link Type", "store", "")
 	If $store = "" Then
@@ -339,7 +339,6 @@ Func MainGUI()
 	EndIf
 	GUICtrlSetState($Checkbox_link, $store)
 	;
-	;$listurl = IniRead($inifle, "DRM-Free List", "url", "")
 	$drmfree = IniRead($inifle, "DRM-Free", "page", "")
 	If $drmfree = "" Then
 		$drmfree = "PC Gaming Wiki"
@@ -443,6 +442,21 @@ Func MainGUI()
 		$7zip = ""
 		IniWrite($inifle, "7-Zip", "path", $7zip)
 	EndIf
+	$split = IniRead($inifle, "7-Zip", "split", "")
+	If $split = "" Then
+		$split = "2 Gb"
+		IniWrite($inifle, "7-Zip", "split", $split)
+	EndIf
+	$compress = IniRead($inifle, "7-Zip", "compression", "")
+	If $compress = "" Then
+		$compress = "Default"
+		IniWrite($inifle, "7-Zip", "compression", $compress)
+	EndIf
+	$thread = IniRead($inifle, "7-Zip", "multithread", "")
+	If $thread = "" Then
+		$thread = "off"
+		IniWrite($inifle, "7-Zip", "multithread", $thread)
+	EndIf
 	;
 	$tabs = @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB
 	If IsArray($array) Then
@@ -473,12 +487,22 @@ Func MainGUI()
         Select
 			Case $msg = $GUI_EVENT_CLOSE Or $msg = $Button_exit
 				; Exit or Close the program
-				;$listurl = GUICtrlRead($Input_list)
-				;If StringLeft($listurl, 4) = "http" Then
-				;	If $listurl <> IniRead($inifle, "DRM-Free List", "url", "") Then
-				;		IniWrite($inifle, "DRM-Free List", "url", $listurl)
-				;	EndIf
-				;EndIf
+				$winpos = WinGetPos($ListGUI, "")
+				$left = $winpos[0]
+				If $left < 0 Then
+					$left = 2
+				ElseIf $left > @DesktopWidth - $width Then
+					$left = @DesktopWidth - $width - 25
+				EndIf
+				IniWrite($inifle, "Program Window", "left", $left)
+				$top = $winpos[1]
+				If $top < 0 Then
+					$top = 2
+				ElseIf $top > @DesktopHeight - $height - 30 Then
+					$top = @DesktopHeight - $height - 60
+				EndIf
+				IniWrite($inifle, "Program Window", "top", $top)
+				;
 				GUIDelete($ListGUI)
 				ExitLoop
 			Case $msg = $Button_zip And $buttxt = "More"
@@ -529,6 +553,9 @@ Func MainGUI()
 					IniWrite($inifle, "TeraCopy", "path", $teracopy)
 					GUICtrlSetData($Input_tera, $teracopy)
 				EndIf
+			Case $msg = $Button_set And $buttxt = "More"
+				; Setup the 7-Zip options
+				SetupGUI()
 			Case $msg = $Button_save
 				; Save the image to game destination folder
 				$image = GUICtrlRead($Input_image)
@@ -611,7 +638,10 @@ Func MainGUI()
 					$height = $winsize[1]
 					WinMove($ListGUI, "", Default, Default, 476, 673)
 					;
-					$Input_zip = GUICtrlCreateInput("", 10, 510, 220, 20)
+					$Button_set = GUICtrlCreateButton("SETUP", 10, 510, 49, 20)
+					GUICtrlSetFont($Button_set, 6, 600, 0, "Small Fonts")
+					GUICtrlSetTip($Button_set, "Setup the 7-Zip options!")
+					$Input_zip = GUICtrlCreateInput("", 60, 510, 170, 20)
 					GUICtrlSetTip($Input_zip, "Path of the 7-Zip program!")
 					$Button_zip = GUICtrlCreateButton("7-Zip", 230, 510, 50, 20)
 					GUICtrlSetFont($Button_zip, 7, 600, 0, "Small Fonts")
@@ -706,6 +736,7 @@ Func MainGUI()
 				ElseIf $buttxt = "More" Then
 					$buttxt = "Less"
 					GUICtrlSetData($Button_opts, $buttxt)
+					GUICtrlDelete($Button_set)
 					GUICtrlDelete($Input_zip)
 					GUICtrlDelete($Button_zip)
 					GUICtrlDelete($Button_code)
@@ -1149,10 +1180,55 @@ Func MainGUI()
 									DirCreate($zipfold)
 									Sleep(500)
 								EndIf
+								If $split = "none" Then
+									$vol = ""
+								Else
+									$pos = StringInStr($mass, "bytes")
+									If $pos = 0 Then
+										$pos = StringInStr($mass, "Kb")
+										If $pos = 0 Then
+											$pos = StringInStr($mass, "Mb")
+											If $pos = 0 Then
+												$pos = StringInStr($mass, "Gb")
+												$size = StringReplace($mass, " Gb", "")
+												$vol = StringReplace($split, " Gb", "")
+												If $size > $vol Then $pos = 0
+											EndIf
+										EndIf
+									EndIf
+									If $pos > 0 Then
+										$vol = ""
+									ElseIf $split = "1 Gb" Then
+										$vol = " -v1g"
+									ElseIf $split = "2 Gb" Then
+										$vol = " -v2g"
+									ElseIf $split = "4 Gb" Then
+										$vol = " -v4g"
+									EndIf
+								EndIf
+								;$meth = " -m"
+								If $compress = "Default" Then
+									$comp = ""
+								ElseIf $compress = "None" Then
+									$comp = " -mx0"
+								ElseIf $compress = "Fastest" Then
+									$comp = " -mx=1"
+								ElseIf $compress = "Fast" Then
+									$comp = " -mx=3"
+								ElseIf $compress = "Normal" Then
+									$comp = " -mx=5"
+								ElseIf $compress = "Maximum" Then
+									$comp = " -mx=7"
+								ElseIf $compress = "Ultra" Then
+									$comp = " -mx=9"
+								EndIf
+								;$meth = $meth & $comp
+								;$meth = $meth & "-mmt=" & $thread
 								If FileExists($zipfold) Then
 									$pos = StringInStr($7zip, "\", 0, -1)
 									$zipfld = StringLeft($7zip, $pos - 1)
 									FileChangeDir($zipfld)
+									$exefile = $zipfold & "\" & $title & ".exe"
 									If $type = "ZIP" Then
 										$zipfile = $zipfold & "\" & $title & ".7z"
 										If FileExists($zipfile) Then
@@ -1176,15 +1252,16 @@ Func MainGUI()
 										GUICtrlSetBkColor($Input_find, $COLOR_RED)
 										GUICtrlSetData($Input_find, "Backing Up to File!")
 										_FileWriteLog($logfle, "Started the ZIP backup for - " & $title)
-										RunWait(@ComSpec & " /c " & '7z.exe a "' & $zipfile & '" "' & $gamefold & '" -v2g', "")
-										$volfile = $zipfile & ".001"
-										If FileExists($volfile) Then
-											If Not FileExists($zipfile & ".002") Then
-												FileMove($volfile, $zipfile)
+										RunWait(@ComSpec & " /c " & '7z.exe a "' & $zipfile & '" "' & $gamefold & '" -mmt=' & $thread & $comp & $vol, "")
+										If Not FileExists($exefile) Then
+											$volfile = $zipfile & ".001"
+											If FileExists($volfile) Then
+												If Not FileExists($zipfile & ".002") Then
+													FileMove($volfile, $zipfile)
+												EndIf
 											EndIf
 										EndIf
 									ElseIf $type = "EXE" Then
-										$exefile = $zipfold & "\" & $title & ".exe"
 										If FileExists($exefile) Then
 											$ans = MsgBox(262144 + 33, "Overwrite Query", "A exe file with the same name already exists." & @LF _
 												& @LF & "OK = Overwrite (replace)." _
@@ -1206,7 +1283,7 @@ Func MainGUI()
 										GUICtrlSetBkColor($Input_find, $COLOR_RED)
 										GUICtrlSetData($Input_find, "Backing Up to File!")
 										_FileWriteLog($logfle, "Started the EXE backup for - " & $title)
-										RunWait(@ComSpec & " /c " & '7z.exe a -sfx7z.sfx "' & $exefile & '" "' & $gamefold & '" -v2g', "")
+										RunWait(@ComSpec & " /c " & '7z.exe a -sfx7z.sfx "' & $exefile & '" "' & $gamefold & '" -mmt=' & $thread & $comp & $vol, "")
 									EndIf
 								Else
 									MsgBox(262192, "Destination Error", "A folder for the zipped file could not be created!", 0, $ListGUI)
@@ -1458,6 +1535,74 @@ Func MainGUI()
 		EndSelect
 	WEnd
 EndFunc ;=> MainGUI
+
+Func SetupGUI()
+	Local $Combo_comp, $Combo_split, $Combo_thread, $Label_comp, $Label_info, $Label_split, $Label_thread
+	;
+	Local $compact, $exStyle, $info, $SetupGUI, $splits, $style, $threads
+	;
+	$exStyle = $WS_EX_TOPMOST
+	$style = $WS_OVERLAPPED + $WS_CAPTION + $WS_SYSMENU + $WS_VISIBLE + $WS_CLIPSIBLINGS
+	$SetupGUI = GUICreate("7-Zip Options", 180, 170, Default, Default, $style, $exStyle, $ListGUI)
+	;
+	; CONTROLS
+	$Label_split = GUICtrlCreateLabel("FILE SPLITTING", 10, 10, 90, 21, $SS_CENTER + $SS_CENTERIMAGE + $SS_SUNKEN)
+	GUICtrlSetFont($Label_split, 7, 400, 0, "Small Fonts")
+	GUICtrlSetBkColor($Label_split, $COLOR_BLUE)
+	GUICtrlSetColor($Label_split, $COLOR_WHITE)
+	$Combo_split = GUICtrlCreateCombo("", 100, 10, 50, 21)
+	GUICtrlSetTip($Combo_split, "Select the size to split at!")
+	$Label_comp = GUICtrlCreateLabel("COMPRESSION", 10, 40, 90, 21, $SS_CENTER + $SS_CENTERIMAGE + $SS_SUNKEN)
+	GUICtrlSetFont($Label_comp, 7, 400, 0, "Small Fonts")
+	GUICtrlSetBkColor($Label_comp, $COLOR_BLUE)
+	GUICtrlSetColor($Label_comp, $COLOR_WHITE)
+	$Combo_comp = GUICtrlCreateCombo("", 100, 40, 70, 21)
+	GUICtrlSetTip($Combo_comp, "Select the level of compression!")
+	$Label_thread = GUICtrlCreateLabel("MULTI-THREAD", 10, 70, 90, 21, $SS_CENTER + $SS_CENTERIMAGE + $SS_SUNKEN)
+	GUICtrlSetFont($Label_thread, 7, 400, 0, "Small Fonts")
+	GUICtrlSetBkColor($Label_thread, $COLOR_BLUE)
+	GUICtrlSetColor($Label_thread, $COLOR_WHITE)
+	$Combo_thread = GUICtrlCreateCombo("", 100, 70, 40, 21)
+	GUICtrlSetTip($Combo_thread, "Set whether to use multi-threading!")
+	$Label_info = GUICtrlCreateLabel("", 10, 100, 160, 55, $SS_CENTER)
+	;
+	; SETTINGS
+	$splits = "1 Gb|2 Gb|4 Gb|none"
+	GUICtrlSetData($Combo_split, $splits, $split)
+	$compact = "Default|None|Fastest|Fast|Normal|Maximum|Ultra"
+	GUICtrlSetData($Combo_comp, $compact, $compress)
+	$threads = "off|on"
+	GUICtrlSetData($Combo_thread, $threads, $thread)
+	;
+	$info = "Default = Normal Compression" & @LF _
+		& @LF & "If source size is less than split" _
+		& @LF & "size, only one file is created."
+	GUICtrlSetData($Label_info, $info)
+
+	GUISetState(@SW_SHOW)
+	While 1
+		$msg = GUIGetMsg()
+        Select
+			Case $msg = $GUI_EVENT_CLOSE
+				; Exit or Close the window
+				GUIDelete($SetupGUI)
+				ExitLoop
+			Case $msg = $Combo_thread
+				; Set whether to use multi-threading
+				$thread = GUICtrlRead($Combo_thread)
+				IniWrite($inifle, "7-Zip", "multithread", $thread)
+			Case $msg = $Combo_split
+				; Select the size to split at
+				$split = GUICtrlRead($Combo_split)
+				IniWrite($inifle, "7-Zip", "split", $split)
+			Case $msg = $Combo_comp
+				; Select the level of compression
+				$compress = GUICtrlRead($Combo_comp)
+				IniWrite($inifle, "7-Zip", "compression", $compress)
+			Case Else
+		EndSelect
+	WEnd
+EndFunc ;=> SetupGUI
 
 
 Func AddTextToInput($text, $what)
@@ -1767,6 +1912,7 @@ Func SetStateOfControls($state)
 	GUICtrlSetState($Combo_backup, $state)
 	;
 	If $buttxt = "More" Then
+		GUICtrlSetState($Button_set, $state)
 		GUICtrlSetState($Input_zip, $state)
 		GUICtrlSetState($Button_zip, $state)
 		GUICtrlSetState($Button_code, $state)
