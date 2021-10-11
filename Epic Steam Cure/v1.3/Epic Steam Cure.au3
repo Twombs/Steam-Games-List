@@ -498,10 +498,8 @@ Func MainGUI()
 		IniWrite($inifle, "7-Zip", "multithread", $thread)
 	EndIf
 	;
-	;If $mode = "Steam" Then
-		$tabs = @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB
-		PopulateTheList()
-	;EndIf
+	$tabs = @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB & @TAB
+	PopulateTheList()
 	;
 	$decrypt = ""
 	$decrypted = ""
@@ -511,9 +509,11 @@ Func MainGUI()
 	$ontop = 1
 	;
 	If $mode = "Steam" Then
-		If $alternate = 4 Then GetLocalSteamGamesFolder()
+		;If $alternate = 4 Then GetLocalSteamGamesFolder()
+		GetLocalSteamGamesFolder()
 	ElseIf $mode = "Epic" Then
-		If $alternate = 4 Then GetLocalEpicGamesFolder()
+		;If $alternate = 4 Then GetLocalEpicGamesFolder()
+		GetLocalEpicGamesFolder()
 	EndIf
 	;
 	SetStateOfControls($GUI_ENABLE)
@@ -2377,7 +2377,6 @@ Func SetStateOfControls($state)
 		GUICtrlSetState($Button_image, $state)
 		GUICtrlSetState($Input_image, $state)
 		GUICtrlSetState($Button_save, $state)
-		GUICtrlSetState($Checkbox_link, $state)
 		GUICtrlSetState($Combo_list, $state)
 		GUICtrlSetState($Button_install, $state)
 	ElseIf $other = "IGDB" And $store = 1 Then
@@ -2385,6 +2384,7 @@ Func SetStateOfControls($state)
 		GUICtrlSetState($Input_image, $state)
 		GUICtrlSetState($Button_save, $state)
 	EndIf
+	GUICtrlSetState($Checkbox_link, $state)
 	;
 	GUICtrlSetState($Button_down, $state)
 	GUICtrlSetState($Button_backup, $state)
