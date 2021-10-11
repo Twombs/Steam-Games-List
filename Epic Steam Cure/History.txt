@@ -1,0 +1,6 @@
+
+(v1.1) When backing up to a ZIP or EXE file, a sub-folder is now created for it, using the game title. Two buttons have been added, NOTES and SAVE. The SAVE button downloads the game ICON file to the game destination folder, if it exists. The NOTES button creates a notes text file, containing DRM-Free List notes about the selected game, using the LIST name as title (i.e. Steam Fandom.txt). That file is saved to the game destination folder, if it exists.
+
+(v1.2) Position of program window is now saved on exit and restored on startup. Added a SETUP button and window for 7-Zip options.
+
+(v1.3) Program renamed to Epic Steam Cure, and some support added for owned Epic Games. UPDATE button has been added, and once a Steam ID has been provided that prompt at program start no longer appears. A query prompt to use Steam or Epic mode has been implemented at program start. Epic mode is not yet fully automated, requiring some manual interaction etc.
