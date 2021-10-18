@@ -1,0 +1,8 @@
+
+(v1.1) When backing up to a ZIP or EXE file, a sub-folder is now created for it, using the game title. Two buttons have been added, NOTES and SAVE. The SAVE button downloads the game ICON file to the game destination folder, if it exists. The NOTES button creates a notes text file, containing DRM-Free List notes about the selected game, using the LIST name as title (i.e. Steam Fandom.txt). That file is saved to the game destination folder, if it exists.
+
+(v1.2) Position of program window is now saved on exit and restored on startup. Added a SETUP button and window for 7-Zip options.
+
+(v1.3) Program renamed to Epic Steam Cure, and some support added for owned Epic Games. UPDATE button has been added, and once a Steam ID has been provided that prompt at program start no longer appears. A query prompt to use Steam or Epic mode has been implemented at program start. Epic mode is not yet fully automated, requiring some manual interaction etc.
+
+(v1.4) Support added for use of Legendary with Epic Games. Legendary however, is only 64 Bit unless you compile it yourself from source to 32 Bit, but you then get a 'Shared Memory' error when attempting to download a game. If using the 32 Bit version, the Legendary folder should be named to 'Legendary32', so that downloading is disabled. With the use of Legendary, owned game titles are returned from Epic, including DLC titles where applicable. NOTE - DLC names are added to the end of the main game title, as another entry, and this has mixed results for web page and game icon etc. Folder browsing has been improved. When Legendary use is enabled, appname (game ID) comes into play.
